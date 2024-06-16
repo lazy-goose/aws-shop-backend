@@ -1,14 +1,13 @@
-import productsData from "../../constants/products/data.json";
-import cors from "../../constants/products/cors.json";
+import productList from "../../mock/productList.data";
 
 export const handler = async () => {
   return {
     statusCode: 200,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": cors.allowOrigin,
+      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET",
     },
-    body: JSON.stringify(productsData),
+    body: JSON.stringify(productList),
   };
 };
