@@ -15,12 +15,14 @@ export const handler = async (event: Event) => {
   const targetProduct = productList.find((p) => p.id == productId);
 
   if (!targetProduct) {
+    const statusCode = 404;
     return {
-      statusCode: 404,
+      statusCode,
       headers: {
         ...BASE_HEADERS,
       },
       body: JSON.stringify({
+        code: statusCode,
         message: "Product not found",
       }),
     };

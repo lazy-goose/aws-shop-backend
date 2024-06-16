@@ -17,7 +17,7 @@ test("GET 404", async () => {
   expect(response.statusCode).toBe(404);
   expect(response).toMatchInlineSnapshot(`
 {
-  "body": "{"message":"Product not found"}",
+  "body": "{"code":404,"message":"Product not found"}",
   "headers": {
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Origin": "*",
