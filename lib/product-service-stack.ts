@@ -43,9 +43,12 @@ export class ProductServiceStack extends cdk.Stack {
       value: stockTable.tableName,
     });
 
-    const apiGateway = new apigateway.HttpApi(this, "ProductServiceApi", {
-      apiName: "Product Service",
-    });
+    /* Lambda */
+
+    const baseEnvironment = {
+      PRODUCT_TABLE_NAME: productTable.tableName,
+      STOCK_TABLE_NAME: stockTable.tableName,
+    };
 
     const lambdaGetProductList = new lambdaNode.NodejsFunction(
       this,
@@ -54,6 +57,9 @@ export class ProductServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/getProductList.ts",
         handler: "handler",
+        environment: {
+          ...baseEnvironment,
+        },
       }
     );
 
@@ -64,8 +70,17 @@ export class ProductServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/getProductById.ts",
         handler: "handler",
+        environment: {
+          ...baseEnvironment,
+        },
       }
     );
+
+    /* API Gateway */
+
+    const apiGateway = new apigateway.HttpApi(this, "ProductServiceApi", {
+      apiName: "Product Service",
+    });
 
     apiGateway.addRoutes({
       path: "/products",
