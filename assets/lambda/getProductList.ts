@@ -56,10 +56,12 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
 
     const joinedData = products.map((product) => {
       const stock = stocks.find((stock) => stock.product_id === product.id);
-      return {
+      const data = {
         ...product,
         ...stock,
       };
+      delete data.product_id;
+      return data;
     });
 
     return responseOk(200, joinedData);

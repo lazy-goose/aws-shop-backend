@@ -67,7 +67,8 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
     const product = unwrapItem<Product>(batchGetItemOutput, productsTableName);
     const stock = unwrapItem<Stock>(batchGetItemOutput, stocksTableName);
 
-    const joinedData = { ...product, ...stock };
+    const joinedData = { ...product, ...stock, product_id: undefined };
+    delete joinedData.product_id;
 
     return responseOk(200, joinedData);
   } catch (e) {
