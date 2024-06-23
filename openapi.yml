@@ -3,7 +3,7 @@ info:
   title: AWS Workshop API
   version: 1.0.0
 servers:
-  - url: https://nh22z5ti2i.execute-api.eu-north-1.amazonaws.com/prod
+  - url: https://mfdlk5m2da.execute-api.eu-north-1.amazonaws.com
     description: Product Service API (AWS Gateway)
 paths:
   /products:
@@ -19,6 +19,40 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Product"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      summary: Create new product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+      responses:
+        "200":
+          description: A JSON array of products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                  message:
+                    type: string
+                example:
+                  statusCode: 400
+                  message: "Invalid request data"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /products/{productId}:
     get:
       summary: Get single product by id
@@ -30,7 +64,7 @@ paths:
           description: ID of the product
           schema:
             type: string
-            example: "1"
+            example: "380c28a6-f905-4dc8-9a7e-fd47118c95e3"
       responses:
         "200":
           description: A product object
@@ -40,15 +74,21 @@ paths:
                 type: object
                 $ref: "#/components/schemas/Product"
         "404":
-          description: A special object with error information
+          description: Invalid resource url
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  statusCode:
+                    type: number
                   message:
                     type: string
-                    example: "Product not found"
+                example:
+                  statusCode: 404
+                  message: "Product not found"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   schemas:
     Product:
@@ -56,7 +96,8 @@ components:
       properties:
         id:
           type: string
-          example: "1"
+          format: uuid
+          example: "276ee84f-8401-4af5-92a2-d5c0eeb9b191"
         title:
           type: string
           example: "Product 1"
@@ -67,3 +108,23 @@ components:
           type: number
           format: float
           example: 100.15
+        count:
+          type: integer
+          example: 1
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        message:
+          type: string
+      example:
+        statusCode: 500
+        message: "Unknown processing error"
+  responses:
+    InternalError:
+      description: Unknown server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
