@@ -93,6 +93,7 @@ export class ProductServiceStack extends cdk.Stack {
 
     const apiGateway = new apigateway.HttpApi(this, "ProductServiceApi", {
       apiName: "Product Service",
+      createDefaultStage: true,
       corsPreflight: {
         allowHeaders: ["Content-Type", "Authorization"],
         allowMethods: [
@@ -104,6 +105,10 @@ export class ProductServiceStack extends cdk.Stack {
         allowOrigins: ["*"],
         maxAge: cdk.Duration.days(1),
       },
+    });
+
+    new cdk.CfnOutput(this, "ApiGatewayUrl", {
+      value: apiGateway.url || "DISABLED",
     });
 
     apiGateway.addRoutes({
