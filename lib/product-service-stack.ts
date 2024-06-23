@@ -63,6 +63,19 @@ export class ProductServiceStack extends cdk.Stack {
       }
     );
 
+    const lambdaCreateProduct = new lambdaNode.NodejsFunction(
+      this,
+      "LambdaCreateProduct",
+      {
+        runtime: lambda.Runtime.NODEJS_LATEST,
+        entry: "assets/lambda/createProduct.ts",
+        handler: "handler",
+        environment: {
+          ...baseEnvironment,
+        },
+      }
+    );
+
     const lambdaGetProductById = new lambdaNode.NodejsFunction(
       this,
       "LambdaGetProductById",
@@ -80,6 +93,17 @@ export class ProductServiceStack extends cdk.Stack {
 
     const apiGateway = new apigateway.HttpApi(this, "ProductServiceApi", {
       apiName: "Product Service",
+      corsPreflight: {
+        allowHeaders: ["Content-Type", "Authorization"],
+        allowMethods: [
+          apigateway.CorsHttpMethod.GET,
+          apigateway.CorsHttpMethod.HEAD,
+          apigateway.CorsHttpMethod.POST,
+          apigateway.CorsHttpMethod.OPTIONS,
+        ],
+        allowOrigins: ["*"],
+        maxAge: cdk.Duration.days(1),
+      },
     });
 
     apiGateway.addRoutes({
@@ -88,6 +112,16 @@ export class ProductServiceStack extends cdk.Stack {
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         lambdaGetProductList.node.id + "Integration",
         lambdaGetProductList
+      ),
+    });
+
+
+    apiGateway.addRoutes({
+      path: "/products",
+      methods: [apigateway.HttpMethod.POST],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        lambdaCreateProduct.node.id + "Integration",
+        lambdaCreateProduct
       ),
     });
 
