@@ -1,4 +1,4 @@
-import productList from "../../mock/productList.data";
+import { products } from "../../mock/product.data";
 
 export const handler = async () => {
   return {
@@ -8,6 +8,6 @@ export const handler = async () => {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET",
     },
-    body: JSON.stringify(productList),
+    body: JSON.stringify(products),
   };
 };

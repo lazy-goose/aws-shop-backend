@@ -10,6 +10,12 @@ export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    new cdk.CfnOutput(this, "DefaultRegion", {
+      value: process.env.CDK_DEFAULT_REGION!,
+    });
+
+    /* Dynamodb */
+
     const tableBaseConfiguration = {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       pointInTimeRecovery: false,
@@ -27,6 +33,14 @@ export class ProductServiceStack extends cdk.Stack {
     const stockTable = new dynamodb.TableV2(this, "StockDynamodbTable", {
       ...tableBaseConfiguration,
       partitionKey: { name: "product_id", type: dynamodb.AttributeType.STRING },
+    });
+
+    new cdk.CfnOutput(this, "ProductTableName", {
+      value: productTable.tableName,
+    });
+
+    new cdk.CfnOutput(this, "StockTableName", {
+      value: stockTable.tableName,
     });
 
     const apiGateway = new apigateway.HttpApi(this, "ProductServiceApi", {

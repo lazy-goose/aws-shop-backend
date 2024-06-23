@@ -5,12 +5,13 @@
     "aws-shop-backend": "bin/aws-shop-backend.js"
   },
   "scripts": {
-    "deploy": "cdk deploy",
+    "deploy": "cdk deploy --outputs-file cfn-output.json",
     "destroy": "cdk destroy",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "seed": "ts-node scripts/seed.ts"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -23,6 +24,10 @@
     "typescript": "~5.4.5"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.602.0",
+    "@aws-sdk/credential-providers": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.602.0",
+    "@aws-sdk/util-dynamodb": "^3.602.0",
     "@types/aws-lambda": "^8.10.138",
     "aws-cdk-lib": "2.145.0",
     "constructs": "^10.0.0",

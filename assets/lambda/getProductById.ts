@@ -1,4 +1,4 @@
-import productList from "../../mock/productList.data";
+import { products } from "../../mock/product.data";
 import { APIGatewayProxyEvent } from "aws-lambda";
 
 const BASE_HEADERS = {
@@ -12,7 +12,7 @@ export type Event = Pick<APIGatewayProxyEvent, "pathParameters">;
 export const handler = async (event: Event) => {
   const productId = event.pathParameters?.productId;
 
-  const targetProduct = productList.find((p) => p.id == productId);
+  const targetProduct = products.find((p) => p.id == productId);
 
   if (!targetProduct) {
     const statusCode = 404;
