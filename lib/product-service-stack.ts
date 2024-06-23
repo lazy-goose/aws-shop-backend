@@ -1,7 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
-import * as apigateway from "aws-cdk-lib/aws-apigatewayv2";
+import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
@@ -91,16 +91,16 @@ export class ProductServiceStack extends cdk.Stack {
 
     /* API Gateway */
 
-    const apiGateway = new apigateway.HttpApi(this, "ProductServiceApi", {
+    const apiGateway = new apigatewayv2.HttpApi(this, "ProductServiceApi", {
       apiName: "Product Service",
       createDefaultStage: true,
       corsPreflight: {
         allowHeaders: ["Content-Type", "Authorization"],
         allowMethods: [
-          apigateway.CorsHttpMethod.GET,
-          apigateway.CorsHttpMethod.HEAD,
-          apigateway.CorsHttpMethod.POST,
-          apigateway.CorsHttpMethod.OPTIONS,
+          apigatewayv2.CorsHttpMethod.GET,
+          apigatewayv2.CorsHttpMethod.HEAD,
+          apigatewayv2.CorsHttpMethod.POST,
+          apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
         allowOrigins: ["*"],
         maxAge: cdk.Duration.days(1),
@@ -113,7 +113,7 @@ export class ProductServiceStack extends cdk.Stack {
 
     apiGateway.addRoutes({
       path: "/products",
-      methods: [apigateway.HttpMethod.GET],
+      methods: [apigatewayv2.HttpMethod.GET],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         lambdaGetProductList.node.id + "Integration",
         lambdaGetProductList
@@ -122,7 +122,7 @@ export class ProductServiceStack extends cdk.Stack {
 
     apiGateway.addRoutes({
       path: "/products",
-      methods: [apigateway.HttpMethod.POST],
+      methods: [apigatewayv2.HttpMethod.POST],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         lambdaCreateProduct.node.id + "Integration",
         lambdaCreateProduct
@@ -131,7 +131,7 @@ export class ProductServiceStack extends cdk.Stack {
 
     apiGateway.addRoutes({
       path: "/products/{productId}",
-      methods: [apigateway.HttpMethod.GET],
+      methods: [apigatewayv2.HttpMethod.GET],
       integration: new apigatewayIntegrations.HttpLambdaIntegration(
         lambdaGetProductById.node.id + "Integration",
         lambdaGetProductById
