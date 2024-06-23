@@ -115,7 +115,6 @@ export class ProductServiceStack extends cdk.Stack {
       ),
     });
 
-
     apiGateway.addRoutes({
       path: "/products",
       methods: [apigateway.HttpMethod.POST],
@@ -133,5 +132,13 @@ export class ProductServiceStack extends cdk.Stack {
         lambdaGetProductById
       ),
     });
+
+    productTable.grantReadWriteData(lambdaGetProductList);
+    productTable.grantReadWriteData(lambdaCreateProduct);
+    productTable.grantReadWriteData(lambdaGetProductById);
+
+    stockTable.grantReadWriteData(lambdaGetProductList);
+    stockTable.grantReadWriteData(lambdaCreateProduct);
+    stockTable.grantReadWriteData(lambdaGetProductById);
   }
 }
