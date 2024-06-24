@@ -65,7 +65,7 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
     const id = randomUUID();
     const { title, description, price, count } = requestData;
 
-    const transactWriteItemsOutput = await docClient.send(
+    /* const transactWriteItemsOutput = */ await docClient.send(
       new TransactWriteCommand({
         TransactItems: [
           {
@@ -84,7 +84,7 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
       })
     );
 
-    return responseOk(200, requestData);
+    return responseOk(200, { id, ...requestData });
   } catch (e) {
     const err = e instanceof Error ? e : new Error("Unknown processing error");
     console.error(err.message);
