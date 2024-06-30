@@ -5,6 +5,8 @@
     "import-service": "bin/import-service.js"
   },
   "scripts": {
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
