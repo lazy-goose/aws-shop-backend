@@ -57,13 +57,6 @@ describe("Lambda importFileParser test group", () => {
     }
   });
 
-  test("Array with Object Containing", () => {
-    expect([
-      { a: 1, b: 2 },
-      { c: 1, d: 1 },
-    ]).toContainEqual(expect.objectContaining({ a: 1, b: expect.anything() }));
-  });
-
   /**
    * WARNING. Breakable test case
    */
