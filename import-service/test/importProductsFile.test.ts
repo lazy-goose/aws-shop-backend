@@ -5,6 +5,8 @@ import { APIGatewayProxyEventV2, Context } from "aws-lambda";
 jest.mock("@aws-sdk/client-s3");
 jest.mock("@aws-sdk/s3-request-presigner");
 
+jest.spyOn(console, "error").mockImplementation();
+
 const mockGetSignedUrl = getSignedUrl as jest.MockedFunction<
   typeof getSignedUrl
 >;
@@ -54,6 +56,18 @@ describe("Lambda importProductsFile test group", () => {
     );
     expect(response.statusCode).toBe(200);
     expect(response.body).toBe(PRESIGNED_URL);
+    expect(mockGetSignedUrl).toHaveBeenCalled();
+  });
+
+  test("Returns error response on getSignedUrl reject", async () => {
+    mockGetSignedUrl.mockRejectedValueOnce(new Error());
+    const event = { queryStringParameters: { name: "file.csv" } };
+    const response = await importProductsFile(
+      event as unknown as APIGatewayProxyEventV2,
+      {} as Context,
+      () => {}
+    );
+    expect(response.statusCode).toBeGreaterThanOrEqual(500);
     expect(mockGetSignedUrl).toHaveBeenCalled();
   });
 });
