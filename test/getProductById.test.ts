@@ -1,8 +1,8 @@
 import { handler as getProductById } from "../assets/lambda/getProductById";
-import productList from "../mock/productList.data";
+import { products } from "../mock/product.data";
 
 test("GET 200", async () => {
-  for (const item of productList) {
+  for (const item of products) {
     const event = { pathParameters: { productId: item.id } };
     const response = await getProductById(event);
     const result = JSON.parse(response.body);
