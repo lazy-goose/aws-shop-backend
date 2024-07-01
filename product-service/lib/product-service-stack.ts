@@ -92,7 +92,6 @@ export class ProductServiceStack extends cdk.Stack {
     /* API Gateway */
 
     const apiGateway = new apigatewayv2.HttpApi(this, "ProductServiceApi", {
-      apiName: "Product Service",
       createDefaultStage: true,
       corsPreflight: {
         allowHeaders: ["Content-Type", "Authorization"],

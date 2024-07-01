@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: AWS Workshop API
+  title: Product Service Api
   version: 1.0.0
 servers:
   - url: https://mfdlk5m2da.execute-api.eu-north-1.amazonaws.com

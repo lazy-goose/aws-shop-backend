@@ -1,0 +1,63 @@
+openapi: 3.0.0
+info:
+  title: Import Service Api
+  version: 1.0.0
+servers:
+  - url: https://2mbuqvf7f7.execute-api.eu-north-1.amazonaws.com
+    description: Import Service API (AWS Gateway)
+paths:
+  /import:
+    get:
+      summary: Get presigned url to upload a file using PUT Request
+      operationId: importProductsFile
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+            example: "products.csv"
+          description: Upload filename. It must end with .csv extension
+      responses:
+        "200":
+          description: Successfully receive presigned url
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: https://importservicestack-importbucketbaf3a8e9-3b9s1leud4oy.s3.eu-north-1.amazonaws.com/uploaded/products.csv?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=ASIAYS2NWAVUM7F3EAOI/20240630/eu-north-1/s3/aws4_request&X-Amz-Date=20240630T123949Z&X-Amz-Expires=30&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEIz//////////wEaCmV1LW5vcnRoLTEiRjBEAiB1UWSjc/EUdj34dCYX7lrsGzbO2XpDi1p6BGeuhQofrgIgR36uE3hkeT9Td7qwt1UZgwDyqn7CcKSpyvq6lxeKoeoq1AMIRhAAGgw1OTAxODQwNTYxNjgiDD8SmXSKhKN41zpTfyqxA20/XLWHdVYnetzEulK0lG4o5H8YyJXgDa7i5K3E9U6fSpTFXWx1+etqkPyPxyTERcY+f5YoKshI7TF1Y6nDZPQHyFpdTT1txDhYYIyqdUaFFLKUnTCHCuCS8Zo/YLUUhdpnrii57gFeuy3OYVrhsGDtNoQ1Hc9Cvcyi4AwNxRfbyqWwHAFOrLsFQlxTsgb001d4lL2lEAp4MwuAi8m+3E3M0ut1x1kn2tFa5ezzBFwEtYhTXgapWF+qe9KbHvH1WYzMPqpA4yLRFvxTwovDtCxNGxFb8Br2LTlnzKi67C4oUjwTE/ISElgTEnYxX3nypP0Uwaufr/h8eO+2qjDcRiiegO/K2xUxdrq5mf/M7YH9xxVfFlrkD8IXZs53FVGMf52jjyYXj/DPN81DnjAo65JswQta8Mcdvc1mdStQM4wtMbTYhktTAVIzIikYsnwkFRpAymg3ZE4/PTzi8y5tYYrNaQELSsz1b8ngSsD+j26t9TrMFcRwbh9vYlACaYEixapmZxWTz4/ZI3OOcVpl+zEH/JOyisUAZZikIJCGxJCI+YIgR17dG5JK/+j7D+4Lq2UwlKSFtAY6nwFLgOc+kNSy73TCdntbUeUIMFmv+eP5SHC1g9YnwfxCymtva/fjii/ApBcboBGgWOq/iah153IK4W90vdFLMqR4sedPL50usJeNtrkleAaNa6VGiQv1QRSNEE/WWkjBlH/Q4xa6IO2Hkc/pLx6L8HWimRIkvCvLU7MYrhUm6JfbORE8sZkl1X6qCtGSMOonwoOSH86R0R6TXc12LFwM9Qk=&X-Amz-Signature=9dd695b217f74a017b66d6b93a18b92ee4e335be782b6c33feacdf06c8728e8b&X-Amz-SignedHeaders=host&x-id=PutObject
+        "400":
+          description: Bad request error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                  message:
+                    type: string
+                example:
+                  statusCode: 400
+                  message: "Bad request. Query string must contain parameter '?name={filename}.csv'"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        message:
+          type: string
+      example:
+        statusCode: 500
+        message: "Unknown processing error"
+  responses:
+    InternalError:
+      description: Unknown server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
