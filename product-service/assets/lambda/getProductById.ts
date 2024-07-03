@@ -9,10 +9,9 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
-import { logRequest } from "./common/logRequest";
-import { Product } from "../../types/product.type";
-import { Stock } from "../../types/stock.type";
 import { tablesConf } from "./common/tablesConf";
+import { logRequest } from "./common/logRequest";
+import { Product, Stock } from "./common/schemas";
 
 const { Ok, Err } = makeJsonResponse({
   defaultHeaders: {

@@ -6,7 +6,7 @@ type Overridable = {
 };
 
 export const makeJsonResponse = (overridable: Overridable) => {
-  const Ok = (statusCode: number, data: Object, headers: Headers = {}) => {
+  const Ok = (statusCode: number, data: any, headers: Headers = {}) => {
     return {
       statusCode,
       headers: {
@@ -18,7 +18,7 @@ export const makeJsonResponse = (overridable: Overridable) => {
     } satisfies APIGatewayProxyResultV2;
   };
 
-  const Err = (statusCode: number, message: string, headers: Headers = {}) => {
+  const Err = (statusCode: number, error: any, headers: Headers = {}) => {
     return {
       statusCode,
       headers: {
@@ -26,7 +26,7 @@ export const makeJsonResponse = (overridable: Overridable) => {
         "Content-Type": "application/json",
         ...headers,
       },
-      body: JSON.stringify({ statusCode, message }),
+      body: JSON.stringify({ statusCode, error }),
     } satisfies APIGatewayProxyResultV2;
   };
 

@@ -5,8 +5,10 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
-import { logRequest } from "./common/logRequest";
 import { tablesConf } from "./common/tablesConf";
+import { logRequest } from "./common/logRequest";
+import { CreateProductDto } from "./common/schemas";
+import { errorMap } from "zod-validation-error";
 import { randomUUID } from "crypto";
 
 const { Ok, Err } = makeJsonResponse({
@@ -21,23 +23,9 @@ const { Ok, Err } = makeJsonResponse({
 /**
  * apigatewayv2.HttpApi doesn't support schema validation
  */
-const matchCreateProductDTO = (
-  data: unknown
-): data is {
-  title: string;
-  description: string;
-  price: number;
-  count: number;
-} => {
-  // prettier-ignore
-  return (
-    typeof data === 'object' && data !== null &&
-    /*1*/ "title" in data && typeof data.title === "string" && data.title.length >= 1 &&
-    /*2*/ "description" in data && typeof data.description === "string" &&
-    /*3*/ "price" in data && typeof data.price === "number" &&
-    /*4*/ "count" in data && Number.isInteger(data.count) &&
-    Object.keys(data).length === 4
-  );
+const validateProductDto = (value: unknown) => {
+  const { success, error } = CreateProductDto.safeParse(value, { errorMap });
+  return success ? null : error.flatten();
 };
 
 const client = new DynamoDBClient({});
@@ -57,8 +45,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     } catch {
       return errorResponse;
     }
-    if (!matchCreateProductDTO(requestData)) {
-      return errorResponse;
+    const validationError = validateProductDto(requestData);
+    if (validationError) {
+      return Err(400, validationError);
     }
 
     const id = randomUUID();
