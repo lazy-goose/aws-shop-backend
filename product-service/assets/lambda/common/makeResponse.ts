@@ -1,3 +1,5 @@
+import { APIGatewayProxyResultV2 } from "aws-lambda";
+
 type Headers = Record<string, string>;
 type Overridable = {
   defaultHeaders: Headers;
@@ -13,7 +15,7 @@ export const makeJsonResponse = (overridable: Overridable) => {
         ...headers,
       },
       body: JSON.stringify(data),
-    };
+    } satisfies APIGatewayProxyResultV2;
   };
 
   const Err = (statusCode: number, message: string, headers: Headers = {}) => {
@@ -25,14 +27,14 @@ export const makeJsonResponse = (overridable: Overridable) => {
         ...headers,
       },
       body: JSON.stringify({ statusCode, message }),
-    };
+    } satisfies APIGatewayProxyResultV2;
   };
 
   return { Ok, Err };
 };
 
 export const fallbackCatchError = (
-  makeResponse: (statusCode: number, msg: string) => Object,
+  makeResponse: (statusCode: number, msg: string) => APIGatewayProxyResultV2,
   error: unknown,
   defaultMsg = "Unknown processing error"
 ) => {

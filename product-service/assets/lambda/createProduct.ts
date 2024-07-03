@@ -3,7 +3,7 @@ import {
   DynamoDBDocumentClient,
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { APIGatewayProxyEventV2, Handler } from "aws-lambda";
+import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
 import { logRequest } from "./common/logRequest";
 import { tablesConf } from "./common/tablesConf";
@@ -43,7 +43,7 @@ const matchCreateProductDTO = (
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
+export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     logRequest(event);
 
