@@ -16,7 +16,7 @@ export class ProductServiceStack extends cdk.Stack {
 
     /* Dynamodb */
 
-    const tableBaseConfiguration = {
+    const TABLE_BASE_CONFIG = {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       pointInTimeRecovery: false,
       billing: dynamodb.Billing.provisioned({
@@ -26,12 +26,12 @@ export class ProductServiceStack extends cdk.Stack {
     } satisfies Omit<dynamodb.TablePropsV2, "partitionKey">;
 
     const productTable = new dynamodb.TableV2(this, "ProductDynamodbTable", {
-      ...tableBaseConfiguration,
+      ...TABLE_BASE_CONFIG,
       partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
     });
 
     const stockTable = new dynamodb.TableV2(this, "StockDynamodbTable", {
-      ...tableBaseConfiguration,
+      ...TABLE_BASE_CONFIG,
       partitionKey: { name: "product_id", type: dynamodb.AttributeType.STRING },
     });
 
@@ -45,7 +45,7 @@ export class ProductServiceStack extends cdk.Stack {
 
     /* Lambda */
 
-    const baseEnvironment = {
+    const DYNAMODB_ENVIRONMENT = {
       PRODUCT_TABLE_NAME: productTable.tableName,
       STOCK_TABLE_NAME: stockTable.tableName,
     };
@@ -56,9 +56,8 @@ export class ProductServiceStack extends cdk.Stack {
       {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/getProductList.ts",
-        handler: "handler",
         environment: {
-          ...baseEnvironment,
+          ...DYNAMODB_ENVIRONMENT,
         },
       }
     );
@@ -69,9 +68,8 @@ export class ProductServiceStack extends cdk.Stack {
       {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/createProduct.ts",
-        handler: "handler",
         environment: {
-          ...baseEnvironment,
+          ...DYNAMODB_ENVIRONMENT,
         },
       }
     );
@@ -82,9 +80,8 @@ export class ProductServiceStack extends cdk.Stack {
       {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/getProductById.ts",
-        handler: "handler",
         environment: {
-          ...baseEnvironment,
+          ...DYNAMODB_ENVIRONMENT,
         },
       }
     );
