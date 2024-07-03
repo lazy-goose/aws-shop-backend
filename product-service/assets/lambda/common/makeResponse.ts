@@ -30,3 +30,13 @@ export const makeJsonResponse = (overridable: Overridable) => {
 
   return { Ok, Err };
 };
+
+export const fallbackCatchError = (
+  makeResponse: (statusCode: number, msg: string) => Object,
+  error: unknown,
+  defaultMsg = "Unknown processing error"
+) => {
+  const msg = error instanceof Error ? error.message : defaultMsg;
+  console.error(msg);
+  return makeResponse(500, msg);
+};

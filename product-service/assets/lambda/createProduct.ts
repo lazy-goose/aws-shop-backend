@@ -4,7 +4,7 @@ import {
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEventV2, Handler } from "aws-lambda";
-import { makeJsonResponse } from "./common/makeResponse";
+import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
 import { logRequest } from "./common/logRequest";
 import { tablesConf } from "./common/tablesConf";
 import { randomUUID } from "crypto";
@@ -85,8 +85,6 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
 
     return Ok(200, { id, ...requestData });
   } catch (e) {
-    const err = e instanceof Error ? e : new Error("Unknown processing error");
-    console.error(err.message);
-    return Err(500, err.message);
+    return fallbackCatchError(Err, e);
   }
 };

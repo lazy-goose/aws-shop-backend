@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEventV2, Handler } from "aws-lambda";
-import { makeJsonResponse } from "./common/makeResponse";
+import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
 import { logRequest } from "./common/logRequest";
 import { Product } from "../../types/product.type";
 import { Stock } from "../../types/stock.type";
@@ -65,8 +65,6 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
 
     return Ok(200, joinedData);
   } catch (e) {
-    const err = e instanceof Error ? e : new Error("Unknown processing error");
-    console.error(err.message);
-    return Err(500, err.message);
+    return fallbackCatchError(Err, e);
   }
 };
