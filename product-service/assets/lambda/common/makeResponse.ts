@@ -1,10 +1,10 @@
+type Headers = Record<string, string>;
 type Overridable = {
-  defaultHeaders: Record<string, string>;
+  defaultHeaders: Headers;
 };
 
-export const makeResponseOk =
-  (overridable: Overridable) =>
-  (statusCode: number, data: Object, headers: Record<string, string> = {}) => {
+export const makeJsonResponse = (overridable: Overridable) => {
+  const Ok = (statusCode: number, data: Object, headers: Headers = {}) => {
     return {
       statusCode,
       headers: {
@@ -16,13 +16,7 @@ export const makeResponseOk =
     };
   };
 
-export const makeResponseErr =
-  (overridable: Overridable) =>
-  (
-    statusCode: number,
-    message: string,
-    headers: Record<string, string> = {}
-  ) => {
+  const Err = (statusCode: number, message: string, headers: Headers = {}) => {
     return {
       statusCode,
       headers: {
@@ -33,3 +27,6 @@ export const makeResponseErr =
       body: JSON.stringify({ statusCode, message }),
     };
   };
+
+  return { Ok, Err };
+};

@@ -1,20 +1,19 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEventV2, Handler } from "aws-lambda";
-import { makeResponseErr, makeResponseOk } from "./common/makeResponse";
+import { makeJsonResponse } from "./common/makeResponse";
 import { logRequest } from "./common/logRequest";
 import { Product } from "../../types/product.type";
 import { Stock } from "../../types/stock.type";
 import { tablesConf } from "./common/tablesConf";
 
-const BASE_HEADERS = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET",
-};
-
-const responseOk = makeResponseOk({ defaultHeaders: BASE_HEADERS });
-const responseErr = makeResponseErr({ defaultHeaders: BASE_HEADERS });
+const { Ok, Err } = makeJsonResponse({
+  defaultHeaders: {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET",
+  },
+});
 
 const unwrapItems = <T extends Record<string, unknown>[]>(outputWithItems: {
   Items?: Record<string, any>[];
@@ -64,10 +63,10 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
       return data;
     });
 
-    return responseOk(200, joinedData);
+    return Ok(200, joinedData);
   } catch (e) {
     const err = e instanceof Error ? e : new Error("Unknown processing error");
     console.error(err.message);
-    return responseErr(500, err.message);
+    return Err(500, err.message);
   }
 };

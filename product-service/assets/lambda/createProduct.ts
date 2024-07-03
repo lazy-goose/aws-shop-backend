@@ -4,20 +4,19 @@ import {
   TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEventV2, Handler } from "aws-lambda";
-import { makeResponseErr, makeResponseOk } from "./common/makeResponse";
+import { makeJsonResponse } from "./common/makeResponse";
 import { logRequest } from "./common/logRequest";
 import { tablesConf } from "./common/tablesConf";
 import { randomUUID } from "crypto";
 
-const BASE_HEADERS = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST",
-};
-
-const responseOk = makeResponseOk({ defaultHeaders: BASE_HEADERS });
-const responseErr = makeResponseErr({ defaultHeaders: BASE_HEADERS });
+const { Ok, Err } = makeJsonResponse({
+  defaultHeaders: {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST",
+  },
+});
 
 /**
  * apigatewayv2.HttpApi doesn't support schema validation
@@ -50,7 +49,7 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
 
     const { productsTableName, stocksTableName } = tablesConf();
 
-    const errorResponse = responseErr(400, "Invalid request data");
+    const errorResponse = Err(400, "Invalid request data");
     let requestData: Record<string, unknown>;
     try {
       // @ts-expect-error
@@ -84,10 +83,10 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
       })
     );
 
-    return responseOk(200, { id, ...requestData });
+    return Ok(200, { id, ...requestData });
   } catch (e) {
     const err = e instanceof Error ? e : new Error("Unknown processing error");
     console.error(err.message);
-    return responseErr(500, err.message);
+    return Err(500, err.message);
   }
 };
