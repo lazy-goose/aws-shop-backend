@@ -7,6 +7,9 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 
 export class ProductServiceStack extends cdk.Stack {
+  public productTable: dynamodb.TableV2;
+  public stockTable: dynamodb.TableV2;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -25,29 +28,29 @@ export class ProductServiceStack extends cdk.Stack {
       }),
     } satisfies Omit<dynamodb.TablePropsV2, "partitionKey">;
 
-    const productTable = new dynamodb.TableV2(this, "ProductDynamodbTable", {
+    this.productTable = new dynamodb.TableV2(this, "ProductDynamodbTable", {
       ...TABLE_BASE_CONFIG,
       partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
     });
 
-    const stockTable = new dynamodb.TableV2(this, "StockDynamodbTable", {
+    this.stockTable = new dynamodb.TableV2(this, "StockDynamodbTable", {
       ...TABLE_BASE_CONFIG,
       partitionKey: { name: "product_id", type: dynamodb.AttributeType.STRING },
     });
 
     new cdk.CfnOutput(this, "ProductTableName", {
-      value: productTable.tableName,
+      value: this.productTable.tableName,
     });
 
     new cdk.CfnOutput(this, "StockTableName", {
-      value: stockTable.tableName,
+      value: this.stockTable.tableName,
     });
 
     /* Lambda */
 
     const DYNAMODB_ENVIRONMENT = {
-      PRODUCT_TABLE_NAME: productTable.tableName,
-      STOCK_TABLE_NAME: stockTable.tableName,
+      PRODUCT_TABLE_NAME: this.productTable.tableName,
+      STOCK_TABLE_NAME: this.stockTable.tableName,
     };
 
     const lambdaGetProductList = new lambdaNode.NodejsFunction(
@@ -134,12 +137,12 @@ export class ProductServiceStack extends cdk.Stack {
       ),
     });
 
-    productTable.grantReadWriteData(lambdaGetProductList);
-    productTable.grantReadWriteData(lambdaCreateProduct);
-    productTable.grantReadWriteData(lambdaGetProductById);
+    this.productTable.grantReadWriteData(lambdaGetProductList);
+    this.productTable.grantReadWriteData(lambdaCreateProduct);
+    this.productTable.grantReadWriteData(lambdaGetProductById);
 
-    stockTable.grantReadWriteData(lambdaGetProductList);
-    stockTable.grantReadWriteData(lambdaCreateProduct);
-    stockTable.grantReadWriteData(lambdaGetProductById);
+    this.stockTable.grantReadWriteData(lambdaGetProductList);
+    this.stockTable.grantReadWriteData(lambdaCreateProduct);
+    this.stockTable.grantReadWriteData(lambdaGetProductById);
   }
 }

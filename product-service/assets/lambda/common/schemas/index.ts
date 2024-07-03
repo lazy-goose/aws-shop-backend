@@ -26,4 +26,11 @@ export const CreateProductDto = z.object({
   count: z.number().int(),
 });
 
+export const SQSCreateProductDto = CreateProductDto.extend({
+  product_id: z.string().uuid(),
+  price: z.number({ coerce: true }),
+  count: z.number({ coerce: true }).int(),
+});
+
 export type CreateProductDto = z.infer<typeof CreateProductDto>;
+export type SQSCreateProductDto = z.infer<typeof SQSCreateProductDto>;
