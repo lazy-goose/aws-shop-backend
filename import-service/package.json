@@ -9,7 +9,7 @@
     "destroy": "cdk destroy",
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest",
+    "test": "jest --silent",
     "cdk": "cdk"
   },
   "devDependencies": {
