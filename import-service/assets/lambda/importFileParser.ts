@@ -1,5 +1,5 @@
 import { pipeline } from "stream/promises";
-import { ImportBucket } from "../../constants";
+import { ImportBucket, CatalogItemsQueue } from "../../constants";
 import {
   CopyObjectCommand,
   DeleteObjectCommand,
@@ -7,11 +7,10 @@ import {
   GetObjectCommandInput,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { S3Handler } from "aws-lambda";
-import csv from "csv-parser";
 import { NodeJsClient } from "@smithy/types";
-
-const { Path: S3Path } = ImportBucket;
+import csv from "csv-parser";
 
 /**
  * Resolves type for Readable stream:
@@ -44,6 +43,42 @@ const moveObjectInS3Bucket = async (input: {
   await s3Client.send(new DeleteObjectCommand({ Bucket, Key: SrcKey }));
 };
 
+const client = new SQSClient({});
+
+const sendSqsMessage = async (params: {
+  Bucket: string;
+  Key: string;
+  MessageBody: any;
+}) => {
+  const { Bucket, Key, MessageBody } = params;
+  const message = JSON.stringify(MessageBody);
+  const sendMessage = new SendMessageCommand({
+    QueueUrl: CatalogItemsQueue.URL,
+    MessageAttributes: {
+      Bucket: { DataType: "String", StringValue: Bucket },
+      Key: { DataType: "String", StringValue: Key },
+    },
+    MessageBody: message,
+  });
+  try {
+    const output = await client.send(sendMessage);
+    console.log("Message has been sent successfully:", message);
+    return {
+      success: false as const,
+      data: output,
+      error: null,
+    };
+  } catch (error) {
+    const errorMessage = `Unable to send the message: ${message}`;
+    console.error(errorMessage, error);
+    return {
+      success: false as const,
+      error: error instanceof Error ? error : new Error(errorMessage),
+      data: null,
+    };
+  }
+};
+
 export const handler: S3Handler = async (event) => {
   for (const record of event.Records) {
     const Bucket = record.s3.bucket.name;
@@ -51,19 +86,19 @@ export const handler: S3Handler = async (event) => {
 
     const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
     const csvParserStream = csv().on("data", (data) => {
-      /**
-       * CloudWatch records logging
-       */
-      console.log(`${Bucket} ${Key}:`, data);
+      sendSqsMessage({ Bucket, Key, MessageBody: data });
     });
     await pipeline(getObjectStream, csvParserStream);
 
-    console.log(`Stage 1. The file '${Key} has been successfully parsed`);
+    console.log(`Stage 1. The file '${Key}' has been processed`);
 
     const moveObjectInput = {
       Bucket,
       SrcKey: Key,
-      DstKey: Key.replace(`${S3Path.UPLOADED}/`, `${S3Path.PARSED}/`),
+      DstKey: Key.replace(
+        `${ImportBucket.Path.UPLOADED}/`,
+        `${ImportBucket.Path.PARSED}/`
+      ),
     };
     await moveObjectInS3Bucket(moveObjectInput);
 

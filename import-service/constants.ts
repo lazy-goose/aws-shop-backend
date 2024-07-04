@@ -3,4 +3,8 @@ export const ImportBucket = {
     UPLOADED: "uploaded",
     PARSED: "parsed",
   },
-} as const;
+};
+
+export const CatalogItemsQueue = {
+  URL: "some-url",
+};

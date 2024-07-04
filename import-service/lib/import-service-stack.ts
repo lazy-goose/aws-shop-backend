@@ -5,7 +5,7 @@ import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
-import { ImportBucket } from "../constants";
+import * as constants from "../constants";
 import { Construct } from "constructs";
 
 export class ImportServiceStack extends cdk.Stack {
@@ -74,6 +74,7 @@ export class ImportServiceStack extends cdk.Stack {
         entry: "assets/lambda/importFileParser.ts",
         environment: {
           BUCKET_NAME: importBucket.bucketName,
+          QUEUE_NAME: "",
         },
       }
     );
@@ -82,7 +83,7 @@ export class ImportServiceStack extends cdk.Stack {
       s3.EventType.OBJECT_CREATED,
       new s3n.LambdaDestination(lambdaImportFileParser),
       {
-        prefix: ImportBucket.Path.UPLOADED + "/",
+        prefix: constants.ImportBucket.Path.UPLOADED + "/",
         suffix: ".csv",
       }
     );
