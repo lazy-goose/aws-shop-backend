@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Lambda getProductById test group Error response [404] on empty product.id 1`] = `"{"statusCode":404,"error":"Resource pathParameter 'productId' is required"}"`;
+
+exports[`Lambda getProductById test group Error response [500+] on BatchWriteCommand fail 1`] = `"{"statusCode":500,"error":""}"`;
