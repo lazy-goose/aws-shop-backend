@@ -2,7 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
-import { tablesConf } from "./common/tablesConf";
+import { tableEnv } from "./common/env";
 import { logRequest } from "./common/logRequest";
 import { Product, Stock } from "./common/schemas";
 
@@ -31,7 +31,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     logRequest(event);
 
-    const { productsTableName, stocksTableName } = tablesConf();
+    const { productsTableName, stocksTableName } = tableEnv();
 
     const SCAN_LIMIT = 25;
     const [scanProductsOutput, scanStocksOutput] = await Promise.all([

@@ -5,7 +5,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
-import { tablesConf } from "./common/tablesConf";
+import { tableEnv } from "./common/env";
 import { logRequest } from "./common/logRequest";
 import { CreateProductDto } from "./common/schemas";
 import { errorMap } from "zod-validation-error";
@@ -35,7 +35,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     logRequest(event);
 
-    const { productsTableName, stocksTableName } = tablesConf();
+    const { productsTableName, stocksTableName } = tableEnv();
 
     const errorResponse = Err(400, "Invalid request data");
     let requestData: Record<string, unknown>;

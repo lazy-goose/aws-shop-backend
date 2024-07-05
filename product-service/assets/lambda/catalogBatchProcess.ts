@@ -3,13 +3,16 @@ import {
   BatchWriteCommand,
   DynamoDBDocumentClient,
 } from "@aws-sdk/lib-dynamodb";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SQSHandler } from "aws-lambda";
-import { tablesConf } from "./common/tablesConf";
 import { SQSCreateProductDto } from "./common/schemas";
+import { snsEnv, tableEnv } from "./common/env";
 import { z } from "zod";
 
 const dynamoDBClient = new DynamoDBClient({});
 const dynamoClient = DynamoDBDocumentClient.from(dynamoDBClient);
+
+const snsClient = new SNSClient({});
 
 const parseBody = (record: string): SQSCreateProductDto | null => {
   try {
@@ -24,8 +27,15 @@ const parseBody = (record: string): SQSCreateProductDto | null => {
   }
 };
 
+const snsMessage = (products: Record<string, unknown>[]) => {
+  const heading = "Products have been created:";
+  const records = products.map((p) => `- ${JSON.stringify(p)}`).join("\n");
+  return `${heading}\n${records}`;
+};
+
 export const handler: SQSHandler = async (event) => {
-  const { productsTableName, stocksTableName } = tablesConf();
+  const { productsTableName, stocksTableName } = tableEnv();
+  const { snsTopicArn } = snsEnv();
 
   const recordsData = event.Records.map((record) => parseBody(record.body));
   const processData = recordsData.filter(
@@ -53,5 +63,27 @@ export const handler: SQSHandler = async (event) => {
     },
   });
 
-  /* const batchWriteCommandOutput = */ await dynamoClient.send(batchCommand);
+  await dynamoClient.send(batchCommand);
+
+  console.log("Stage 1. Products have been processed:", processData);
+
+  const Message = snsMessage(processData);
+  const publishCommand = new PublishCommand({
+    TopicArn: snsTopicArn,
+    MessageAttributes: {
+      totalPrice: {
+        DataType: "Number",
+        StringValue: String(processData.reduce((a, v) => a + v.price, 0)),
+      },
+      totalCount: {
+        DataType: "Number",
+        StringValue: String(processData.reduce((a, v) => a + v.count, 0)),
+      },
+    },
+    Message,
+  });
+
+  await snsClient.send(publishCommand);
+
+  console.log("Stage 2. Message has been sent:", Message);
 };
