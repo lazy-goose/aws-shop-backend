@@ -10,6 +10,8 @@ import {
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { S3Handler } from "aws-lambda";
 import { NodeJsClient } from "@smithy/types";
+import { CreateProductCsv } from "./common/schemas";
+import { errorMap } from "zod-validation-error";
 import csv from "csv-parser";
 
 /**
@@ -48,10 +50,10 @@ const client = new SQSClient({});
 const sendSqsMessage = async (params: {
   Bucket: string;
   Key: string;
-  MessageBody: any;
+  Message: any;
 }) => {
-  const { Bucket, Key, MessageBody } = params;
-  const message = JSON.stringify(MessageBody);
+  const { Bucket, Key, Message } = params;
+  const message = JSON.stringify(Message);
   const sendMessage = new SendMessageCommand({
     QueueUrl: CatalogItemsQueue.URL,
     MessageAttributes: {
@@ -79,14 +81,23 @@ const sendSqsMessage = async (params: {
   }
 };
 
+const validatorParse = (data: unknown) => {
+  return CreateProductCsv.safeParse(data, { errorMap });
+};
+
 export const handler: S3Handler = async (event) => {
   for (const record of event.Records) {
     const Bucket = record.s3.bucket.name;
     const Key = record.s3.object.key;
 
     const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
-    const csvParserStream = csv().on("data", (data) => {
-      sendSqsMessage({ Bucket, Key, MessageBody: data });
+    const csvParserStream = csv().on("data", (csvData) => {
+      const { success, data: parsedData, error } = validatorParse(csvData);
+      if (success) {
+        sendSqsMessage({ Bucket, Key, Message: parsedData });
+      } else {
+        console.error("Record validation error:", error.flatten());
+      }
     });
     await pipeline(getObjectStream, csvParserStream);
 

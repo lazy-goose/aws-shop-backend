@@ -28,7 +28,9 @@ export const handler: SQSHandler = async (event) => {
   const { productsTableName, stocksTableName } = tablesConf();
 
   const recordsData = event.Records.map((record) => parseBody(record.body));
-  const processData = recordsData.filter((d) => d !== null);
+  const processData = recordsData.filter(
+    (d): d is Exclude<typeof d, null> => d !== null
+  );
 
   if (!processData.length) {
     return;
