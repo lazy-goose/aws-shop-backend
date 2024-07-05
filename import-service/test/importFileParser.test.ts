@@ -47,9 +47,6 @@ describe("Lambda importFileParser test group", () => {
     ],
   } as S3CreateEvent;
 
-  /**
-   * WARNING. Breakable test case
-   */
   test("Send message command has been called for each record", async () => {
     await importFileParser(event, {} as Context, () => {});
     expect(sqsMock).toHaveReceivedCommandTimes(
@@ -58,18 +55,12 @@ describe("Lambda importFileParser test group", () => {
     );
   });
 
-  /**
-   * WARNING. Breakable test case
-   */
   test("Put/Delete commands have been called at least once", async () => {
     await importFileParser(event, {} as Context, () => {});
     expect(s3Mock).toHaveReceivedCommandTimes(CopyObjectCommand, 1);
     expect(s3Mock).toHaveReceivedCommandTimes(DeleteObjectCommand, 1);
   });
 
-  /**
-   * WARNING. Breakable test case
-   */
   test("Put/Delete commands move file from 'uploaded/' to 'parsed/'", async () => {
     await importFileParser(event, {} as Context, () => {});
     expect(s3Mock).toHaveReceivedCommandWith(CopyObjectCommand, {
