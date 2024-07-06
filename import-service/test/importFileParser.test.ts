@@ -22,6 +22,12 @@ const BUCKET_NAME = "bucket-name";
 const SRC_FILE_KEY = "uploaded/products.csv";
 const DST_FILE_KEY = "parsed/products.csv";
 
+const invokeImportFileParser = <E extends S3CreateEvent>(
+  event: Partial<E> = {}
+) => {
+  return importFileParser(event as E, {} as Context, () => {});
+};
+
 describe("Lambda importFileParser test group", () => {
   beforeAll(() => {
     const stream = createReadStream("./mock/products/products.csv");
@@ -53,7 +59,7 @@ describe("Lambda importFileParser test group", () => {
   } as S3CreateEvent;
 
   test("Send message command has been called N-record times", async () => {
-    await importFileParser(event, {} as Context, () => {});
+    await invokeImportFileParser(event);
     expect(sqsMock).toHaveReceivedCommandTimes(
       SendMessageCommand,
       productsJson.length
@@ -61,13 +67,13 @@ describe("Lambda importFileParser test group", () => {
   });
 
   test("Put/Delete commands have been called at least once", async () => {
-    await importFileParser(event, {} as Context, () => {});
+    await invokeImportFileParser(event);
     expect(s3Mock).toHaveReceivedCommandTimes(CopyObjectCommand, 1);
     expect(s3Mock).toHaveReceivedCommandTimes(DeleteObjectCommand, 1);
   });
 
   test("Put/Delete commands move file from 'uploaded/' to 'parsed/'", async () => {
-    await importFileParser(event, {} as Context, () => {});
+    await invokeImportFileParser(event);
     expect(s3Mock).toHaveReceivedCommandWith(CopyObjectCommand, {
       CopySource: `/${BUCKET_NAME}/${SRC_FILE_KEY}`,
       Bucket: BUCKET_NAME,
