@@ -11,7 +11,7 @@ import {
   createProductsWithId,
   totalPrice as expectedTotalPrice,
   totalCount as expectedTotalCount,
-} from "../mock/createProductWithId.data";
+} from "../mock/create-products-with-id.data";
 
 import "aws-sdk-client-mock-jest";
 

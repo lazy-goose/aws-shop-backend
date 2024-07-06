@@ -5,7 +5,7 @@ import {
   BatchWriteCommand,
   DynamoDBDocumentClient,
 } from "@aws-sdk/lib-dynamodb";
-import { products, stocks } from "../mock/product.data";
+import { products, stocks } from "../mock/products.data";
 import { ProductServiceStack } from "../lib/product-service-stack";
 
 const parseCfnOutputFile = async () => {

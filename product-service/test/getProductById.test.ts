@@ -2,7 +2,7 @@ import { invokeGatewayProxyEvent } from "./common/invokeEvent";
 import { BatchGetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { handler as getProductById } from "../assets/lambda/getProductById";
 import { mockClient } from "aws-sdk-client-mock";
-import { products, stocks } from "../mock/product.data";
+import { products, stocks } from "../mock/products.data";
 
 const ddbMock = mockClient(DynamoDBDocumentClient);
 
