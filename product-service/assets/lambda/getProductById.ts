@@ -42,9 +42,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     const productId = event.pathParameters?.productId;
 
     if (!productId) {
-      throw new Error(
-        "Lambda function must be invoked with pathParameter 'productId'"
-      );
+      return Err(404, "Resource pathParameter 'productId' is required");
     }
 
     const { productsTableName, stocksTableName } = tableEnv();
