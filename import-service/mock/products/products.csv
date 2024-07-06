@@ -1,6 +1,6 @@
-product_id,title,description,count,price
-a65d28fe-a86c-4ae8-b75d-e92f5840dae3,CSV Product A,Description of Product A,1,11.1
-71746ceb-0951-475b-b0ab-a10b9cc4cfd3,CSV Product B,Description of Product B,2,12.2
-6cc950f8-18fb-4d0b-8890-313634d1a9a1,CSV Product C,Description of Product C,3,13.3
-64c76aae-18dc-4b82-9724-c0baa55289fe,CSV Product D,Description of Product D,4,14.4
-a93e1db9-c5a6-466a-8396-de1fe61c2d77,CSV Product E,Description of Product E,5,15.5
+title,description,count,price
+CSV Product A,Description of Product A,1,10.1
+CSV Product B,Description of Product B,2,20.2
+CSV Product C,Description of Product C,3,30.3
+CSV Product D,Description of Product D,4,40.4
+CSV Product E,Description of Product E,5,50.5

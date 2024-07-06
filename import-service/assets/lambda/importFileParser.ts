@@ -13,6 +13,7 @@ import { NodeJsClient } from "@smithy/types";
 import { CreateProductFromCsvDto } from "./common/schemas";
 import { errorMap } from "zod-validation-error";
 import { sqsEnv } from "./common/env";
+import crypto from "crypto";
 import csv from "csv-parser";
 
 /**

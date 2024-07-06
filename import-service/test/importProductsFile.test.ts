@@ -5,8 +5,6 @@ import { APIGatewayProxyEventV2, Context } from "aws-lambda";
 jest.mock("@aws-sdk/client-s3");
 jest.mock("@aws-sdk/s3-request-presigner");
 
-jest.spyOn(console, "error").mockImplementation();
-
 const mockGetSignedUrl = getSignedUrl as jest.MockedFunction<
   typeof getSignedUrl
 >;

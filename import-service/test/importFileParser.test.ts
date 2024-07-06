@@ -52,7 +52,7 @@ describe("Lambda importFileParser test group", () => {
     ],
   } as S3CreateEvent;
 
-  test("Send message command has been called for each record", async () => {
+  test("Send message command has been called N-record times", async () => {
     await importFileParser(event, {} as Context, () => {});
     expect(sqsMock).toHaveReceivedCommandTimes(
       SendMessageCommand,
