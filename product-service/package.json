@@ -5,7 +5,7 @@
     "aws-shop-backend": "bin/aws-shop-backend.js"
   },
   "scripts": {
-    "deploy": "cdk deploy --outputs-file cfn-output.json",
+    "deploy": "cdk deploy --outputs-file product-service.output.json",
     "destroy": "cdk destroy",
     "build": "tsc",
     "watch": "tsc -w",

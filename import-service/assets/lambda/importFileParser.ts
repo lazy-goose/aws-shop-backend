@@ -1,5 +1,5 @@
 import { pipeline } from "stream/promises";
-import { ImportBucket, CatalogItemsQueue } from "../../constants";
+import { ImportBucket } from "../../constants";
 import {
   CopyObjectCommand,
   DeleteObjectCommand,
@@ -10,8 +10,9 @@ import {
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { S3Handler } from "aws-lambda";
 import { NodeJsClient } from "@smithy/types";
-import { CreateProductCsv } from "./common/schemas";
+import { CreateProductFromCsvDto } from "./common/schemas";
 import { errorMap } from "zod-validation-error";
+import { sqsEnv } from "./common/env";
 import csv from "csv-parser";
 
 /**
@@ -48,14 +49,15 @@ const moveObjectInS3Bucket = async (input: {
 const client = new SQSClient({});
 
 const sendSqsMessage = async (params: {
+  QueueUrl: string;
   Bucket: string;
   Key: string;
   Message: any;
 }) => {
-  const { Bucket, Key, Message } = params;
+  const { Bucket, Key, Message, QueueUrl } = params;
   const message = JSON.stringify(Message);
   const sendMessage = new SendMessageCommand({
-    QueueUrl: CatalogItemsQueue.URL,
+    QueueUrl,
     MessageAttributes: {
       Bucket: { DataType: "String", StringValue: Bucket },
       Key: { DataType: "String", StringValue: Key },
@@ -82,19 +84,29 @@ const sendSqsMessage = async (params: {
 };
 
 const validatorParse = (data: unknown) => {
-  return CreateProductCsv.safeParse(data, { errorMap });
+  return CreateProductFromCsvDto.safeParse(data, { errorMap });
 };
 
 export const handler: S3Handler = async (event) => {
+  const { sqsUrl } = sqsEnv();
+
   for (const record of event.Records) {
     const Bucket = record.s3.bucket.name;
     const Key = record.s3.object.key;
 
     const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
     const csvParserStream = csv().on("data", (csvData) => {
-      const { success, data: parsedData, error } = validatorParse(csvData);
+      const { success, data: csvParsedData, error } = validatorParse(csvData);
       if (success) {
-        sendSqsMessage({ Bucket, Key, Message: parsedData });
+        sendSqsMessage({
+          QueueUrl: sqsUrl,
+          Bucket,
+          Key,
+          Message: {
+            product_id: crypto.randomUUID(),
+            ...csvParsedData,
+          },
+        });
       } else {
         console.error("Record validation error:", error.flatten());
       }

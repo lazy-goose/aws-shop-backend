@@ -17,6 +17,7 @@ import "aws-sdk-client-mock-jest";
 const s3Mock = mockClient(S3Client);
 const sqsMock = mockClient(SQSClient);
 
+const SQS_URL = "sqs-url";
 const BUCKET_NAME = "bucket-name";
 const SRC_FILE_KEY = "uploaded/products.csv";
 const DST_FILE_KEY = "parsed/products.csv";
@@ -28,6 +29,10 @@ describe("Lambda importFileParser test group", () => {
     s3Mock.on(CopyObjectCommand).resolves({});
     s3Mock.on(DeleteObjectCommand).resolves({});
     sqsMock.on(SendMessageCommand).resolves({});
+  });
+
+  beforeEach(() => {
+    process.env = { SQS_URL };
   });
 
   afterEach(() => {

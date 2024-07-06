@@ -4,7 +4,3 @@ export const ImportBucket = {
     PARSED: "parsed",
   },
 };
-
-export const CatalogItemsQueue = {
-  URL: "some-url",
-};

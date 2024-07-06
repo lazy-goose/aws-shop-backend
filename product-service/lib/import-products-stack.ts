@@ -25,6 +25,10 @@ export class ImportProductsStack extends cdk.Stack {
       encryption: sqs.QueueEncryption.UNENCRYPTED,
     });
 
+    new cdk.CfnOutput(this, "CatalogItemsQueueArn", {
+      value: catalogItemsQueue.queueArn,
+    });
+
     /* Topic */
 
     const createProductTopic = new sns.Topic(this, "CreateProductTopic", {

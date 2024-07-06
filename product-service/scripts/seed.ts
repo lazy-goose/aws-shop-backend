@@ -9,7 +9,7 @@ import { products, stocks } from "../mock/product.data";
 import { ProductServiceStack } from "../lib/product-service-stack";
 
 const parseCfnOutputFile = async () => {
-  const cfnOutputFilePath = "cfn-output.json";
+  const cfnOutputFilePath = "product-service.output.json";
 
   let cfnOutputUtfData: string;
   try {
