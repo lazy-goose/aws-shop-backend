@@ -7,12 +7,17 @@ import {
   GetObjectCommandInput,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import {
+  SQSClient,
+  SendMessageBatchCommand,
+  SendMessageBatchRequestEntry,
+} from "@aws-sdk/client-sqs";
 import { S3Handler } from "aws-lambda";
 import { NodeJsClient } from "@smithy/types";
 import { CreateProductFromCsvDto } from "./common/schemas";
 import { errorMap } from "zod-validation-error";
 import { sqsEnv } from "./common/env";
+import { createBatchStream } from "./common/createBatchStream";
 import crypto from "crypto";
 import csv from "csv-parser";
 
@@ -47,42 +52,7 @@ const moveObjectInS3Bucket = async (input: {
   await s3Client.send(new DeleteObjectCommand({ Bucket, Key: SrcKey }));
 };
 
-const client = new SQSClient({});
-
-const sendSqsMessage = async (params: {
-  QueueUrl: string;
-  Bucket: string;
-  Key: string;
-  Message: any;
-}) => {
-  const { Bucket, Key, Message, QueueUrl } = params;
-  const message = JSON.stringify(Message);
-  const sendMessage = new SendMessageCommand({
-    QueueUrl,
-    MessageAttributes: {
-      Bucket: { DataType: "String", StringValue: Bucket },
-      Key: { DataType: "String", StringValue: Key },
-    },
-    MessageBody: message,
-  });
-  try {
-    const output = await client.send(sendMessage);
-    console.log("Message has been sent successfully:", message);
-    return {
-      success: false as const,
-      data: output,
-      error: null,
-    };
-  } catch (error) {
-    const errorMessage = `Unable to send the message: ${message}`;
-    console.error(errorMessage, error);
-    return {
-      success: false as const,
-      error: error instanceof Error ? error : new Error(errorMessage),
-      data: null,
-    };
-  }
-};
+const sqsClient = new SQSClient({});
 
 const validatorParse = (data: unknown) => {
   return CreateProductFromCsvDto.safeParse(data, { errorMap });
@@ -96,23 +66,45 @@ export const handler: S3Handler = async (event) => {
     const Key = record.s3.object.key;
 
     const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
-    const csvParserStream = csv().on("data", (csvData) => {
-      const { success, data: csvParsedData, error } = validatorParse(csvData);
-      if (success) {
-        sendSqsMessage({
-          QueueUrl: sqsUrl,
-          Bucket,
-          Key,
-          Message: {
-            product_id: crypto.randomUUID(),
-            ...csvParsedData,
-          },
-        });
-      } else {
-        console.error("Record validation error:", error.flatten());
+    const csvParserStream = csv();
+    const batchStream = createBatchStream(5).on("data", (rawRecords: any[]) => {
+      const records: any[] = [];
+      for (const record of rawRecords) {
+        const { success, data, error } = validatorParse(record);
+        if (success) {
+          records.push(data);
+        } else {
+          console.error("Skip record:", error.flatten());
+        }
       }
+      if (!records.length) {
+        return;
+      }
+      const Entries: SendMessageBatchRequestEntry[] = records.map((data) => {
+        const product_id = crypto.randomUUID();
+        return {
+          Id: product_id,
+          MessageAttributes: {
+            Bucket: { DataType: "String", StringValue: Bucket },
+            Key: { DataType: "String", StringValue: Key },
+          },
+          MessageBody: JSON.stringify({ product_id, ...data }),
+        };
+      });
+      const sendMessageBatchCommand = new SendMessageBatchCommand({
+        QueueUrl: sqsUrl,
+        Entries,
+      });
+      /* async */ sqsClient
+        .send(sendMessageBatchCommand)
+        .then(() => {
+          console.log("Message group has been sent successfully:", Entries);
+        })
+        .catch((error) => {
+          console.error("Message group has not been sent:", error, Entries);
+        });
     });
-    await pipeline(getObjectStream, csvParserStream);
+    await pipeline(getObjectStream, csvParserStream, batchStream);
 
     console.log(`Stage 1. The file '${Key}' has been processed`);
 
