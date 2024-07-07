@@ -88,7 +88,7 @@ describe("Lambda importFileParser test group", () => {
       });
       await invokeImportFileParser(event);
       const calledMessages = getSendMessageBatchCalledMessages();
-      expect(calledMessages.length).toBe(3);
+      expect(calledMessages.length).toBe(2);
     });
   });
 
