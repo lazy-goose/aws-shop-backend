@@ -65,6 +65,8 @@ export const handler: S3Handler = async (event) => {
     const Bucket = record.s3.bucket.name;
     const Key = record.s3.object.key;
 
+    const sendMessagePromises: Promise<any>[] = [];
+
     const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
     const csvParserStream = csv();
     const batchStream = createBatchStream(5).on("data", (rawRecords: any[]) => {
@@ -95,16 +97,20 @@ export const handler: S3Handler = async (event) => {
         QueueUrl: sqsUrl,
         Entries,
       });
-      /* async */ sqsClient
-        .send(sendMessageBatchCommand)
-        .then(() => {
-          console.log("Message group has been sent successfully:", Entries);
-        })
-        .catch((error) => {
-          console.error("Message group has not been sent:", error, Entries);
-        });
+      sendMessagePromises.push(
+        sqsClient
+          .send(sendMessageBatchCommand)
+          .then((response) => {
+            console.log("Message group has been sent successfully:", Entries);
+            return response;
+          })
+          .catch((error) => {
+            console.error("Message group has not been sent:", error, Entries);
+          })
+      );
     });
     await pipeline(getObjectStream, csvParserStream, batchStream);
+    await Promise.allSettled(sendMessagePromises);
 
     console.log(`Stage 1. The file '${Key}' has been processed`);
 
