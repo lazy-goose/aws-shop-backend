@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
-  BatchWriteCommand,
   DynamoDBDocumentClient,
+  TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import { SQSHandler } from "aws-lambda";
@@ -46,24 +46,30 @@ export const handler: SQSHandler = async (event) => {
     return;
   }
 
-  const batchCommand = new BatchWriteCommand({
-    RequestItems: {
-      [productsTableName]: processData.map(
-        ({ product_id, title, description, price }) => ({
-          PutRequest: {
-            Item: { id: product_id, title, description, price },
+  const transactionCommands = processData.map(
+    ({ product_id, title, description, price, count }) => {
+      return new TransactWriteCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: productsTableName,
+              Item: { id: product_id, title, description, price },
+            },
           },
-        })
-      ),
-      [stocksTableName]: processData.map(({ product_id, count }) => ({
-        PutRequest: {
-          Item: { product_id, count },
-        },
-      })),
-    },
-  });
+          {
+            Put: {
+              TableName: stocksTableName,
+              Item: { product_id, count },
+            },
+          },
+        ],
+      });
+    }
+  );
 
-  await dynamoClient.send(batchCommand);
+  await Promise.allSettled(
+    transactionCommands.map((cmd) => dynamoClient.send(cmd))
+  );
 
   console.log("Stage 1. Products have been processed:", processData);
 
