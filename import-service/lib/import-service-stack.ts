@@ -9,13 +9,6 @@ import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
 import * as constants from "../constants";
 import { Construct } from "constructs";
 
-/**
- * Before you deploy `import-service`, be sure to deploy `product-service`.
- * The `product-service.output.json` file will be generated containing ARN for CatalogItemsQueue.
- * This Arn is used by ImportServiceStack to grant permission to send messages from importFileParser lambda.
- */
-import productServiceOutput from "../../product-service/product-service.output.json";
-
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -77,7 +70,7 @@ export class ImportServiceStack extends cdk.Stack {
     const catalogItemsQueue = sqs.Queue.fromQueueArn(
       this,
       "CatalogItemsQueue",
-      productServiceOutput.ImportProductStack.CatalogItemsQueueArn
+      cdk.Fn.importValue("CatalogItemsQueueArn")
     );
 
     const lambdaImportFileParser = new lambdaNode.NodejsFunction(
