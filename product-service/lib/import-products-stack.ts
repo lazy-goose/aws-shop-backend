@@ -79,7 +79,7 @@ export class ImportProductsStack extends cdk.Stack {
     lambdaCatalogBatchProcess.addEventSource(
       new sqsSources.SqsEventSource(catalogItemsQueue, {
         batchSize: 5,
-        maxBatchingWindow: cdk.Duration.seconds(5),
+        maxBatchingWindow: cdk.Duration.seconds(25),
       })
     );
 
