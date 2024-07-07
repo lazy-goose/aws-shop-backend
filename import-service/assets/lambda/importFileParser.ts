@@ -97,15 +97,16 @@ export const handler: S3Handler = async (event) => {
         QueueUrl: sqsUrl,
         Entries,
       });
+      const entries = JSON.stringify(Entries, null, 2);
       sendMessagePromises.push(
         sqsClient
           .send(sendMessageBatchCommand)
           .then((response) => {
-            console.log("Message group has been sent successfully:", Entries);
+            console.log("Message group has been sent successfully:", entries);
             return response;
           })
           .catch((error) => {
-            console.error("Message group has not been sent:", error, Entries);
+            console.error("Message group has not been sent:", error, entries);
           })
       );
     });
