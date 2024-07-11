@@ -5,6 +5,7 @@
     "authorization-service": "bin/authorization-service.js"
   },
   "scripts": {
+    "postinstall": "node cp .env.example .env",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
