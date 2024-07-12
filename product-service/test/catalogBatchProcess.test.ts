@@ -5,6 +5,7 @@ import { mockClient } from "aws-sdk-client-mock";
 import {
   BatchWriteCommand,
   DynamoDBDocumentClient,
+  TransactWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 import {
@@ -63,32 +64,26 @@ describe("Lambda importFileParser test group", () => {
     const sqsEvent = createSqsEvent(createProductsWithId);
     await invokeSqsEvent(catalogBatchProcess)(sqsEvent);
 
-    expect(ddbMock).toHaveReceivedCommandWith(BatchWriteCommand, {
-      RequestItems: {
-        [PRODUCT_TABLE_NAME]: createProductsWithId.map(
-          ({ product_id, title, description, price }) => ({
-            PutRequest: {
-              Item: {
-                id: product_id,
-                title,
-                description,
-                price,
+    createProductsWithId.forEach(
+      ({ product_id, title, description, price, count }) => {
+        expect(ddbMock).toHaveReceivedCommandWith(TransactWriteCommand, {
+          TransactItems: [
+            {
+              Put: {
+                TableName: PRODUCT_TABLE_NAME,
+                Item: { id: product_id, title, description, price },
               },
             },
-          })
-        ),
-        [STOCK_TABLE_NAME]: createProductsWithId.map(
-          ({ product_id, count }) => ({
-            PutRequest: {
-              Item: {
-                product_id,
-                count,
+            {
+              Put: {
+                TableName: STOCK_TABLE_NAME,
+                Item: { product_id, count },
               },
             },
-          })
-        ),
-      },
-    });
+          ],
+        });
+      }
+    );
   });
 
   test("SNS message has been sent with right attributes", async () => {
