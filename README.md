@@ -13,3 +13,7 @@ npm run deploy:all
 ```sh
 npm run destroy:all
 ```
+
+```sh
+npm run test:all
+```
