@@ -6,6 +6,8 @@
   },
   "scripts": {
     "postinstall": "node cp .env.example .env",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
