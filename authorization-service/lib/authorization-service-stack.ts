@@ -18,12 +18,21 @@ export class AuthorizationServiceStack extends cdk.Stack {
       );
     }
 
-    new lambdaNode.NodejsFunction(this, "LambdaBasicAuthorizer", {
-      runtime: lambda.Runtime.NODEJS_LATEST,
-      entry: "assets/lambda/basicAuthorizer.ts",
-      environment: {
-        CREDENTIALS: `${USERNAME}=${PASSWORD}`,
-      },
+    const lambdaBasicAuthorizer = new lambdaNode.NodejsFunction(
+      this,
+      "LambdaBasicAuthorizer",
+      {
+        runtime: lambda.Runtime.NODEJS_LATEST,
+        entry: "assets/lambda/basicAuthorizer.ts",
+        environment: {
+          CREDENTIALS: `${USERNAME}=${PASSWORD}`,
+        },
+      }
+    );
+
+    new cdk.CfnOutput(this, "LambdaBasicAuthorizerArn", {
+      value: lambdaBasicAuthorizer.functionArn,
+      exportName: "LambdaBasicAuthorizerArn",
     });
   }
 }
