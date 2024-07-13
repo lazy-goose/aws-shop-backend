@@ -1,4 +1,6 @@
 import * as cdk from "aws-cdk-lib";
+import * as awsLogs from "aws-cdk-lib/aws-logs";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigatewayv2Integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as apigatewayv2Authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
@@ -9,6 +11,7 @@ import { CfnImport } from "../constants";
 
 interface Props {
   authorizer: boolean;
+  accessLogs: boolean;
   routes: {
     import: lambda.Function;
   };
@@ -18,7 +21,7 @@ export class ImportServiceApi {
   public readonly httpApi: apigatewayv2.HttpApi;
 
   constructor(scope: Construct, props: Props) {
-    const { authorizer, routes } = props;
+    const { authorizer, accessLogs, routes } = props;
 
     const lambdaBasicAuthorizer =
       lambdaNode.NodejsFunction.fromFunctionAttributes(
@@ -54,6 +57,10 @@ export class ImportServiceApi {
       defaultAuthorizer: authorizer ? apiGatewayAuthorizer : undefined,
     });
 
+    if (accessLogs) {
+      this.enableAccessLogs(apiGateway);
+    }
+
     apiGateway.addRoutes({
       path: "/import",
       methods: [apigatewayv2.HttpMethod.GET],
@@ -64,5 +71,31 @@ export class ImportServiceApi {
     });
 
     this.httpApi = apiGateway;
+  }
+
+  /**
+   * https://www.kevinwmcconnell.com/cdk/http-api-logs-with-cdk
+   */
+  private enableAccessLogs(api = this.httpApi) {
+    const cfnStage = api.defaultStage!.node
+      .defaultChild as apigatewayv2.CfnStage;
+    const logGroup = new awsLogs.LogGroup(api, "ImportServiceApiAccessLogs", {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    cfnStage.accessLogSettings = {
+      destinationArn: logGroup.logGroupArn,
+      format: JSON.stringify({
+        requestId: "$context.requestId",
+        sourceIp: "$context.identity.sourceIp",
+        httpMethod: "$context.httpMethod",
+        path: "$context.path",
+        status: "$context.status",
+        userAgent: "$context.identity.userAgent",
+        requestTime: "$context.requestTime",
+        responseLength: "$context.responseLength",
+        authorizerError: "$context.authorizer.error",
+      }),
+    };
+    logGroup.grantWrite(new iam.ServicePrincipal("apigateway.amazonaws.com"));
   }
 }

@@ -49,6 +49,7 @@ export class ImportServiceStack extends cdk.Stack {
 
     const importServiceApi = new ImportServiceApi(this, {
       authorizer: true,
+      accessLogs: true,
       routes: {
         import: lambdaImportProductsFile,
       },
