@@ -27,10 +27,6 @@ export class ImportServiceStack extends cdk.Stack {
       ],
     });
 
-    new cdk.CfnOutput(this, "ImportBucketName", {
-      value: importBucket.bucketName,
-    });
-
     /* Import .csv file into s3 bucket */
 
     const lambdaImportProductsFile = new lambdaNode.NodejsFunction(
@@ -55,8 +51,8 @@ export class ImportServiceStack extends cdk.Stack {
       },
     });
 
-    new cdk.CfnOutput(this, "ApiGatewayUrl", {
-      value: importServiceApi.httpApi.url || "DISABLED",
+    new cdk.CfnOutput(this, "ImportServiceApiUrl", {
+      value: importServiceApi.httpApi.url || "",
     });
 
     /* Parse .csv and send messages to CatalogItemsQueue */

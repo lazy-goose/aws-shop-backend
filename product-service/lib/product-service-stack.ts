@@ -13,10 +13,6 @@ export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new cdk.CfnOutput(this, "DefaultRegion", {
-      value: process.env.CDK_DEFAULT_REGION!,
-    });
-
     /* Dynamodb */
 
     const TABLE_BASE_CONFIG = {
@@ -106,8 +102,8 @@ export class ProductServiceStack extends cdk.Stack {
       },
     });
 
-    new cdk.CfnOutput(this, "ApiGatewayUrl", {
-      value: apiGateway.url || "DISABLED",
+    new cdk.CfnOutput(this, "ProductServiceApiUrl", {
+      value: apiGateway.url || "",
     });
 
     apiGateway.addRoutes({
