@@ -5,7 +5,7 @@
     "aws-shop-backend": "bin/aws-shop-backend.js"
   },
   "scripts": {
-    "deploy": "cdk deploy --outputs-file cfn-output.json",
+    "deploy": "cdk deploy --outputs-file product-service.output.json --all",
     "destroy": "cdk destroy",
     "build": "tsc",
     "watch": "tsc -w",
@@ -17,6 +17,9 @@
     "@types/jest": "^29.5.12",
     "@types/node": "20.12.7",
     "aws-cdk": "2.145.0",
+    "aws-sdk-client-mock": "^4.0.1",
+    "aws-sdk-client-mock-jest": "^4.0.1",
+    "deepmerge": "^4.3.1",
     "esbuild": "^0.21.5",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
@@ -25,12 +28,15 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.602.0",
+    "@aws-sdk/client-sns": "^3.609.0",
     "@aws-sdk/credential-providers": "^3.600.0",
     "@aws-sdk/lib-dynamodb": "^3.602.0",
     "@aws-sdk/util-dynamodb": "^3.602.0",
     "@types/aws-lambda": "^8.10.138",
     "aws-cdk-lib": "2.145.0",
     "constructs": "^10.0.0",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "zod": "^3.23.8",
+    "zod-validation-error": "^3.3.0"
   }
 }

@@ -7,11 +7,19 @@ import {
   GetObjectCommandInput,
   S3Client,
 } from "@aws-sdk/client-s3";
+import {
+  SQSClient,
+  SendMessageBatchCommand,
+  SendMessageBatchRequestEntry,
+} from "@aws-sdk/client-sqs";
 import { S3Handler } from "aws-lambda";
-import csv from "csv-parser";
 import { NodeJsClient } from "@smithy/types";
-
-const { Path: S3Path } = ImportBucket;
+import { CreateProductFromCsvDto } from "./common/schemas";
+import { errorMap } from "zod-validation-error";
+import { sqsEnv } from "./common/env";
+import { createBatchStream } from "./common/createBatchStream";
+import crypto from "crypto";
+import csv from "csv-parser";
 
 /**
  * Resolves type for Readable stream:
@@ -44,26 +52,76 @@ const moveObjectInS3Bucket = async (input: {
   await s3Client.send(new DeleteObjectCommand({ Bucket, Key: SrcKey }));
 };
 
+const sqsClient = new SQSClient({});
+
+const validatorParse = (data: unknown) => {
+  return CreateProductFromCsvDto.safeParse(data, { errorMap });
+};
+
 export const handler: S3Handler = async (event) => {
+  const { sqsUrl } = sqsEnv();
+
   for (const record of event.Records) {
     const Bucket = record.s3.bucket.name;
     const Key = record.s3.object.key;
 
-    const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
-    const csvParserStream = csv().on("data", (data) => {
-      /**
-       * CloudWatch records logging
-       */
-      console.log(`${Bucket} ${Key}:`, data);
-    });
-    await pipeline(getObjectStream, csvParserStream);
+    const sendMessagePromises: Promise<any>[] = [];
 
-    console.log(`Stage 1. The file '${Key} has been successfully parsed`);
+    const getObjectStream = await getS3ObjectReadStream({ Bucket, Key });
+    const csvParserStream = csv();
+    const batchStream = createBatchStream(5).on("data", (rawRecords: any[]) => {
+      const records: any[] = [];
+      for (const record of rawRecords) {
+        const { success, data, error } = validatorParse(record);
+        if (success) {
+          records.push(data);
+        } else {
+          console.error("Skip record:", error.flatten());
+        }
+      }
+      if (!records.length) {
+        return;
+      }
+      const Entries: SendMessageBatchRequestEntry[] = records.map((data) => {
+        const product_id = crypto.randomUUID();
+        return {
+          Id: product_id,
+          MessageAttributes: {
+            Bucket: { DataType: "String", StringValue: Bucket },
+            Key: { DataType: "String", StringValue: Key },
+          },
+          MessageBody: JSON.stringify({ product_id, ...data }),
+        };
+      });
+      const sendMessageBatchCommand = new SendMessageBatchCommand({
+        QueueUrl: sqsUrl,
+        Entries,
+      });
+      const entries = JSON.stringify(Entries, null, 2);
+      sendMessagePromises.push(
+        sqsClient
+          .send(sendMessageBatchCommand)
+          .then((response) => {
+            console.log("Message group has been sent successfully:", entries);
+            return response;
+          })
+          .catch((error) => {
+            console.error("Message group has not been sent:", error, entries);
+          })
+      );
+    });
+    await pipeline(getObjectStream, csvParserStream, batchStream);
+    await Promise.allSettled(sendMessagePromises);
+
+    console.log(`Stage 1. The file '${Key}' has been processed`);
 
     const moveObjectInput = {
       Bucket,
       SrcKey: Key,
-      DstKey: Key.replace(`${S3Path.UPLOADED}/`, `${S3Path.PARSED}/`),
+      DstKey: Key.replace(
+        `${ImportBucket.Path.UPLOADED}/`,
+        `${ImportBucket.Path.PARSED}/`
+      ),
     };
     await moveObjectInS3Bucket(moveObjectInput);
 

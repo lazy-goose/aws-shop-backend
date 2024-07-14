@@ -7,21 +7,19 @@ import {
   BatchGetCommand,
   BatchGetCommandOutput,
 } from "@aws-sdk/lib-dynamodb";
-import { APIGatewayProxyEventV2, Handler } from "aws-lambda";
-import { makeResponseErr, makeResponseOk } from "./common/makeResponse";
+import { APIGatewayProxyHandlerV2 } from "aws-lambda";
+import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
+import { tableEnv } from "./common/env";
 import { logRequest } from "./common/logRequest";
-import { Product } from "../../types/product.type";
-import { Stock } from "../../types/stock.type";
-import { tablesConf } from "./common/tablesConf";
+import { Product, Stock } from "./common/schemas";
 
-const BASE_HEADERS = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET",
-};
-
-const responseOk = makeResponseOk({ defaultHeaders: BASE_HEADERS });
-const responseErr = makeResponseErr({ defaultHeaders: BASE_HEADERS });
+const { Ok, Err } = makeJsonResponse({
+  defaultHeaders: {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET",
+  },
+});
 
 const unwrapItem = <T extends Record<string, unknown>>(
   batchOutput: BatchGetCommandOutput,
@@ -37,19 +35,17 @@ const unwrapItem = <T extends Record<string, unknown>>(
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
+export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     logRequest(event);
 
     const productId = event.pathParameters?.productId;
 
     if (!productId) {
-      throw new Error(
-        "Lambda function must be invoked with pathParameter 'productId'"
-      );
+      return Err(404, "Resource pathParameter 'productId' is required");
     }
 
-    const { productsTableName, stocksTableName } = tablesConf();
+    const { productsTableName, stocksTableName } = tableEnv();
 
     const batchGetItemOutput = await docClient.send(
       new BatchGetCommand({
@@ -67,16 +63,14 @@ export const handler: Handler<APIGatewayProxyEventV2> = async (event) => {
     const product = unwrapItem<Product>(batchGetItemOutput, productsTableName);
     const stock = unwrapItem<Stock>(batchGetItemOutput, stocksTableName);
 
-    const joinedData = { ...product, ...stock, product_id: undefined };
-    delete joinedData.product_id;
+    const { product_id: _, ...stockData } = stock;
+    const joinedData = { ...product, ...stockData };
 
-    return responseOk(200, joinedData);
+    return Ok(200, joinedData);
   } catch (e) {
     if (e instanceof ResourceNotFoundException) {
-      return responseErr(400, e.message);
+      return Err(400, e.message);
     }
-    const err = e instanceof Error ? e : new Error("Unknown processing error");
-    console.error(err.message);
-    return responseErr(500, err.message);
+    return fallbackCatchError(Err, e);
   }
 };

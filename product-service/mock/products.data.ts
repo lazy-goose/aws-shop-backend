@@ -1,5 +1,4 @@
-import { Product } from "../types/product.type";
-import { Stock } from "../types/stock.type";
+import { Product, Stock } from "../assets/lambda/common/schemas";
 
 export const products = [
   {

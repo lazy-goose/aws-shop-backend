@@ -1,11 +1,12 @@
 import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3n from "aws-cdk-lib/aws-s3-notifications";
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
-import { ImportBucket } from "../constants";
+import * as constants from "../constants";
 import { Construct } from "constructs";
 
 export class ImportServiceStack extends cdk.Stack {
@@ -31,7 +32,7 @@ export class ImportServiceStack extends cdk.Stack {
       value: importBucket.bucketName,
     });
 
-    /* Import Products File */
+    /* Import .csv file into s3 bucket */
 
     const lambdaImportProductsFile = new lambdaNode.NodejsFunction(
       this,
@@ -64,7 +65,13 @@ export class ImportServiceStack extends cdk.Stack {
 
     importBucket.grantReadWrite(lambdaImportProductsFile);
 
-    /* File Parser s3 event */
+    /* Parse .csv and send messages to CatalogItemsQueue */
+
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
+      this,
+      "CatalogItemsQueue",
+      cdk.Fn.importValue("CatalogItemsQueueArn")
+    );
 
     const lambdaImportFileParser = new lambdaNode.NodejsFunction(
       this,
@@ -74,15 +81,18 @@ export class ImportServiceStack extends cdk.Stack {
         entry: "assets/lambda/importFileParser.ts",
         environment: {
           BUCKET_NAME: importBucket.bucketName,
+          SQS_URL: catalogItemsQueue.queueUrl,
         },
       }
     );
+
+    catalogItemsQueue.grantSendMessages(lambdaImportFileParser);
 
     importBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
       new s3n.LambdaDestination(lambdaImportFileParser),
       {
-        prefix: ImportBucket.Path.UPLOADED + "/",
+        prefix: constants.ImportBucket.Path.UPLOADED + "/",
         suffix: ".csv",
       }
     );

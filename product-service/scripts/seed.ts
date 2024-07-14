@@ -1,56 +1,22 @@
-import fs from "fs/promises";
 import { fromIni } from "@aws-sdk/credential-providers";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   BatchWriteCommand,
   DynamoDBDocumentClient,
 } from "@aws-sdk/lib-dynamodb";
-import { products, stocks } from "../mock/product.data";
-import { ProductServiceStack } from "../lib/product-service-stack";
+import { products, stocks } from "../mock/products.data";
 
-const parseCfnOutputFile = async () => {
-  const cfnOutputFilePath = "cfn-output.json";
-
-  let cfnOutputUtfData: string;
-  try {
-    cfnOutputUtfData = await fs.readFile(cfnOutputFilePath, {
-      encoding: "utf-8",
-    });
-  } catch (e) {
-    if (e instanceof Error && "code" in e && e.code === "ENOENT") {
-      console.error(
-        `No file '${cfnOutputFilePath}'. Try to run 'npm run deploy' before running the script`
-      );
-    }
-    process.exit(1);
-  }
-
-  let cfnOutputData: Record<string, unknown>;
-  try {
-    cfnOutputData = JSON.parse(cfnOutputUtfData);
-  } catch (_) {
-    console.error(`Unable to parse '${cfnOutputFilePath}'`);
-    process.exit(1);
-  }
-
-  const stackName = ProductServiceStack.name;
-
-  // @ts-expect-error
-  const productTable = cfnOutputData[stackName].ProductTableName;
-  // @ts-expect-error
-  const stockTable = cfnOutputData[stackName].StockTableName;
-
-  return {
-    productTable,
-    stockTable,
-  };
-};
+/*
+ * Run `npm run deploy` before running the script to create the `product-service.output.json` file
+ */
+import cfnOutput from "../product-service.output.json";
 
 /**
  * Destructive operation. Command will overwrite items with the same keys
  */
 (async function seed() {
-  const { productTable, stockTable } = await parseCfnOutputFile();
+  const productTable = cfnOutput.ProductServiceStack.ProductTableName;
+  const stockTable = cfnOutput.ProductServiceStack.StockTableName;
 
   const client = new DynamoDBClient({
     credentials: fromIni(),

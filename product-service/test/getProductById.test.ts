@@ -1,38 +1,66 @@
-import { APIGatewayProxyEventV2, Context } from "aws-lambda";
+import { invokeGatewayProxyEvent } from "./common/invokeEvent";
+import { BatchGetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { handler as getProductById } from "../assets/lambda/getProductById";
-import { products } from "../mock/product.data";
+import { mockClient } from "aws-sdk-client-mock";
+import { products, stocks } from "../mock/products.data";
 
-test("GET 200", async () => {
-  for (const item of products) {
-    const event = { pathParameters: { productId: item.id } };
-    const response = await getProductById(
-      event as unknown as APIGatewayProxyEventV2,
-      {} as Context,
-      () => {}
-    );
-    const result = JSON.parse(response.body);
+const ddbMock = mockClient(DynamoDBDocumentClient);
+
+const PRODUCT_TABLE_NAME = "PRODUCT_TABLE_NAME";
+const STOCK_TABLE_NAME = "STOCK_TABLE_NAME";
+
+describe("Lambda getProductById test group", () => {
+  const [product, stock] = [products[0], stocks[0]];
+
+  beforeAll(() => {
+    ddbMock
+      .on(BatchGetCommand, {
+        RequestItems: {
+          [PRODUCT_TABLE_NAME]: { Keys: [{ id: product.id }] },
+          [STOCK_TABLE_NAME]: { Keys: [{ product_id: product.id }] },
+        },
+      })
+      .resolves({
+        $metadata: {},
+        Responses: {
+          [PRODUCT_TABLE_NAME]: [product],
+          [STOCK_TABLE_NAME]: [stock],
+        },
+      });
+  });
+
+  beforeEach(() => {
+    process.env = { PRODUCT_TABLE_NAME, STOCK_TABLE_NAME };
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    ddbMock.resetHistory();
+  });
+
+  test("Successfully get product by id", async () => {
+    const response = await invokeGatewayProxyEvent(getProductById)({
+      pathParameters: { productId: product.id },
+    });
+    const result = JSON.parse(response.body!);
     expect(response.statusCode).toBe(200);
-    expect(result).toMatchObject(item);
-  }
-});
+    expect(result).toMatchObject(product);
+  });
 
-test("GET 404", async () => {
-  const event = { pathParameters: { productId: "-1" } };
-  const response = await getProductById(
-    event as unknown as APIGatewayProxyEventV2,
-    {} as Context,
-    () => {}
-  );
-  expect(response.statusCode).toBe(404);
-  expect(response).toMatchInlineSnapshot(`
-{
-  "body": "{"code":404,"message":"Product not found"}",
-  "headers": {
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json",
-  },
-  "statusCode": 404,
-}
-`);
+  test("Error response [404] on empty product.id", async () => {
+    const response = await invokeGatewayProxyEvent(getProductById)({
+      pathParameters: { productId: undefined },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toMatchSnapshot();
+  });
+
+  test("Error response [500+] on BatchWriteCommand fail", async () => {
+    ddbMock.on(BatchGetCommand).rejectsOnce();
+    const response = await invokeGatewayProxyEvent(getProductById)({
+      pathParameters: { productId: product.id },
+    });
+    expect(response.statusCode).toBeGreaterThanOrEqual(500);
+    expect(response.body).toMatchSnapshot();
+  });
 });
