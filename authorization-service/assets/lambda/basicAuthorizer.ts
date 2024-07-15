@@ -8,13 +8,13 @@ import { APIGatewayRequestSimpleAuthorizerHandlerV2 } from "aws-lambda";
 const isAuthorized = (username: string, password: string) => {
   return (process.env.CREDENTIALS || "")
     .split(":")
-    .map((credential) => credential.split("=").map((v) => v.trim()))
-    .filter(([name, pass]) => name && pass)
-    .some(([name, pass]) => name === username && pass === password);
+    .map((credential) => credential.split("=").map((c) => c.trim()))
+    .some(
+      ([name, pass]) => name && pass && name === username && pass === password
+    );
 };
 
 /**
- * @param {string} headerValue - Authorization header value. The value must match the Basic auth scheme
  * @example parseAuthHeader("Basic bGF6eS1nb29zZT1URVNUX1BBU1NXT1JE")
  */
 const parseAuthHeader = (headerValue: string) => {
@@ -23,9 +23,9 @@ const parseAuthHeader = (headerValue: string) => {
     throw new Error("Unsupported authorization schema");
   }
   const decodedToken = Buffer.from(encodedToken, "base64").toString("utf-8");
-  const [username, password] = decodedToken.split(":").map((v) => v.trim());
+  const [username, password] = decodedToken.split(":");
   if (!username || !password) {
-    throw new Error("Invalid token");
+    throw new Error("Incorrect token");
   }
   return { username, password };
 };
@@ -33,40 +33,48 @@ const parseAuthHeader = (headerValue: string) => {
 const safeParseAuthHeader = (headerValue: string) => {
   try {
     return {
-      success: true as const,
-      credentials: parseAuthHeader(headerValue),
       error: null,
+      ...parseAuthHeader(headerValue),
     };
   } catch (e) {
     return {
-      success: false as const,
-      credentials: null,
       error: e as Error,
+      username: null,
+      password: null,
     };
   }
 };
+
+const log = (...pass: any) => console.log("[ALLOWED]", ...pass);
+const err = (...pass: any) => console.error("[DENIED]", ...pass);
 
 export const handler: APIGatewayRequestSimpleAuthorizerHandlerV2 = async (
   event
 ) => {
   const authHeader = event.headers?.["authorization"];
-  console.log(`Authorization header: ${authHeader}`);
+  console.log("Authorization:", authHeader);
   if (!authHeader) {
-    console.log("Denied: Authorization header was not provided");
+    err("Authorization header was not provided");
     return {
       isAuthorized: false,
     };
   }
-  const { success, error, credentials } = safeParseAuthHeader(authHeader);
-  if (!success) {
-    console.log("Denied: Invalid credentials.", error);
+
+  const { error, username, password } = safeParseAuthHeader(authHeader);
+  if (error) {
+    err(error);
     return {
       isAuthorized: false,
     };
   }
-  const isAuth = isAuthorized(credentials.username, credentials.password);
-  console.log(isAuth ? "Allowed:" : "Denied:", credentials);
+
+  const isAuthz = isAuthorized(username, password);
+  if (isAuthz) {
+    log(`username: ${username},`, `password: ${password}`);
+  } else {
+    err(`username: ${username},`, `password: ${password}`);
+  }
   return {
-    isAuthorized: isAuth,
+    isAuthorized: isAuthz,
   };
 };

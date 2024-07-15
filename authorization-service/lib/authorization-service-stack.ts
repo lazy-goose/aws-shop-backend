@@ -5,18 +5,23 @@ import { Construct } from "constructs";
 
 import "dotenv/config";
 
+const credentialsFromEnv = (...envNames: string[]): string => {
+  const credentials = envNames.map((env) => {
+    const username = env;
+    const password = process.env[username]?.trimEnd();
+    if (!password) {
+      throw new Error(
+        `Wrong cdk environment. Variable 'process.env[${username}'] is undefined`
+      );
+    }
+    return [username, password];
+  });
+  return credentials.map((cred) => cred.join("=")).join(":");
+};
+
 export class AuthorizationServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-
-    const USERNAME = "lazy-goose";
-    const PASSWORD = process.env[USERNAME];
-
-    if (!PASSWORD) {
-      throw new Error(
-        `Wrong cdk environment. Env variable 'process.env[${USERNAME}'] was not provided`
-      );
-    }
 
     const lambdaBasicAuthorizer = new lambdaNode.NodejsFunction(
       this,
@@ -25,7 +30,7 @@ export class AuthorizationServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/basicAuthorizer.ts",
         environment: {
-          CREDENTIALS: `${USERNAME}=${PASSWORD}`,
+          CREDENTIALS: credentialsFromEnv("lazy-goose"),
         },
       }
     );

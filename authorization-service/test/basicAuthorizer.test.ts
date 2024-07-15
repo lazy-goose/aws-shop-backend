@@ -15,84 +15,63 @@ const invokeBasicAuthorizer = async (
   ) as Promise<APIGatewaySimpleAuthorizerResult>;
 };
 
-const authHeader = (token: string) => ({
-  authorization: `Basic ${token}`,
-});
-
 const toBase64 = (string: string) => {
   return Buffer.from(string).toString("base64");
 };
 
-const USERS = [
-  ["lazy-goose", "TEST_PASSWORD"],
-  ["greedy-goose", "GU$$Y_LIKER"],
-];
+const Auth = (encode: string, schema = "Basic") => ({
+  headers: {
+    authorization: `${schema} ${toBase64(encode)}`,
+  },
+});
 
 describe("Lambda basicAuthorizer test group", () => {
   beforeEach(() => {
     process.env = {
-      CREDENTIALS: USERS.map((u) => u.join("=")).join(":"),
+      CREDENTIALS: "lazy-goose=TEST_PASSWORD:greedy-goose=GU$$Y_LIKER",
     };
   });
 
+  /* Allow */
+
   describe("Authorize users with valid credentials", () => {
-    test.each(USERS)("Credentials: %s=%s", async (name, pass) => {
-      const validToken = toBase64(`${name}:${pass}`);
-      const response = await invokeBasicAuthorizer({
-        headers: {
-          ...authHeader(validToken),
-        },
-      });
-      expect(response.isAuthorized).toBeTruthy();
-    });
+    test.each(["lazy-goose:TEST_PASSWORD", "greedy-goose:GU$$Y_LIKER"])(
+      "Credentials: '%s'",
+      async (credentials) => {
+        const response = await invokeBasicAuthorizer(Auth(credentials));
+        expect(response.isAuthorized).toBeTruthy();
+      }
+    );
   });
 
-  test("Forbid request without auth header", async () => {
+  /* Forbid */
+
+  test("Forbid request without Authorization header", async () => {
     const response = await invokeBasicAuthorizer({ headers: {} });
     expect(response.isAuthorized).toBeFalsy();
   });
 
-  test("Forbid request with non Basic auth schema", async () => {
-    const invalidAuthSchema = "Digest";
-    const [name, pass] = USERS[0].join(":");
-    const validToken = toBase64(`${name}:${pass}`);
-    try {
-      const response = await invokeBasicAuthorizer({
-        headers: {
-          Authorization: `${invalidAuthSchema} ${validToken}`,
-        },
-      });
-      expect(response.isAuthorized).toBeFalsy();
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-    }
+  test("Forbid request with non-Basic authorization schema", async () => {
+    const response = await invokeBasicAuthorizer(
+      Auth("lazy-goose:TEST_PASSWORD", "Digest")
+    );
+    expect(response.isAuthorized).toBeFalsy();
   });
 
   describe("Forbid request with empty credentials", () => {
-    const [name, pass] = USERS[0];
-
-    test("No username", async () => {
-      const invalidToken = toBase64(`${name}:`);
-      try {
-        const response = await invokeBasicAuthorizer({
-          headers: { ...authHeader(invalidToken) },
-        });
-        expect(response.isAuthorized).toBeFalsy();
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-      }
-    });
-
-    test("No password", async () => {
-      const invalidToken = toBase64(`:${pass}`);
-      try {
-        const response = await invokeBasicAuthorizer({
-          headers: { ...authHeader(invalidToken) },
-        });
-        expect(response.isAuthorized).toBeFalsy();
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-      }
+    test.each([
+      ["No username", ":TEST_PASSWORD"],
+      ["No username", " :TEST_PASSWORD"],
+      ["No username", "undefined:TEST_PASSWORD"],
+      ["No password", "lazy-goose:"],
+      ["No password", "lazy-goose: "],
+      ["No password", "lazy-goose:undefined"],
+      ["No username/password", ":"],
+      ["No username/password", " : "],
+      ["No username/password", "undefined:undefined"],
+    ])("%s: '%s'", async (_, credentials) => {
+      const response = await invokeBasicAuthorizer(Auth(credentials));
+      expect(response.isAuthorized).toBeFalsy();
     });
   });
 });
