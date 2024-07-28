@@ -1,11 +1,15 @@
 {
   "name": "aws-shop-backend",
   "version": "1.0.0",
+  "workspaces": [
+    "product-service",
+    "authorization-service",
+    "import-service"
+  ],
   "scripts": {
-    "postinstall": "npm install --prefix product-service && npm install --prefix import-service",
-    "deploy:all": "npm run deploy --prefix product-service && npm run deploy --prefix import-service",
-    "destroy:all": "npm run destroy --prefix product-service && npm run destroy--prefix import-service",
-    "test:all": "npm test --prefix product-service && npm test --prefix import-service"
+    "deploy:all": "npm run deploy --ws",
+    "destroy:all": "npm run destroy -w product-service -w import-service -w authorization-service",
+    "test:all": "npm test --ws --if-present"
   },
   "license": "ISC"
 }

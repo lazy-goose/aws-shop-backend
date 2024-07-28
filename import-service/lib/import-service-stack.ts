@@ -2,11 +2,10 @@ import * as cdk from "aws-cdk-lib";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 import * as sqs from "aws-cdk-lib/aws-sqs";
-import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
-import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaNode from "aws-cdk-lib/aws-lambda-nodejs";
 import * as constants from "../constants";
+import { ImportServiceApi } from "./import-service-api";
 import { Construct } from "constructs";
 
 export class ImportServiceStack extends cdk.Stack {
@@ -28,10 +27,6 @@ export class ImportServiceStack extends cdk.Stack {
       ],
     });
 
-    new cdk.CfnOutput(this, "ImportBucketName", {
-      value: importBucket.bucketName,
-    });
-
     /* Import .csv file into s3 bucket */
 
     const lambdaImportProductsFile = new lambdaNode.NodejsFunction(
@@ -46,24 +41,19 @@ export class ImportServiceStack extends cdk.Stack {
       }
     );
 
-    const apiGateway = new apigatewayv2.HttpApi(this, "ImportServiceApi", {
-      createDefaultStage: true,
-    });
-
-    new cdk.CfnOutput(this, "ApiGatewayUrl", {
-      value: apiGateway.url || "DISABLED",
-    });
-
-    apiGateway.addRoutes({
-      path: "/import",
-      methods: [apigatewayv2.HttpMethod.GET],
-      integration: new apigatewayIntegrations.HttpLambdaIntegration(
-        lambdaImportProductsFile.node.id + "Integration",
-        lambdaImportProductsFile
-      ),
-    });
-
     importBucket.grantReadWrite(lambdaImportProductsFile);
+
+    const importServiceApi = new ImportServiceApi(this, {
+      authorizer: true,
+      accessLogs: true,
+      routes: {
+        import: lambdaImportProductsFile,
+      },
+    });
+
+    new cdk.CfnOutput(this, "ImportServiceApiUrl", {
+      value: importServiceApi.httpApi.url || "",
+    });
 
     /* Parse .csv and send messages to CatalogItemsQueue */
 

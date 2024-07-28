@@ -7,15 +7,10 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Handler, APIGatewayProxyEventV2 } from "aws-lambda";
 
-const BASE_HEADERS = {
-  "Access-Control-Allow-Methods": "GET",
-  "Access-Control-Allow-Origin": "*",
-};
-
 const responseOk = (statusCode: number, message: string) => {
   return {
     statusCode,
-    headers: { ...BASE_HEADERS, "Content-Type": "text/plain" },
+    headers: { "Content-Type": "text/plain" },
     body: message,
   };
 };
@@ -23,7 +18,7 @@ const responseOk = (statusCode: number, message: string) => {
 const responseErr = (statusCode: number, message: string) => {
   return {
     statusCode,
-    headers: { ...BASE_HEADERS, "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ statusCode, message }),
   };
 };
