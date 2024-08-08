@@ -2,7 +2,8 @@
   "name": "bff-service",
   "version": "1.0.0",
   "scripts": {
-    "deploy": "cd aws && cdk deploy"
+    "deploy": "cd aws && cdk deploy",
+    "start": "go run ."
   },
   "keywords": [],
   "author": "",
