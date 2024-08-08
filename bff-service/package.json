@@ -1,0 +1,11 @@
+{
+  "name": "bff-service",
+  "version": "1.0.0",
+  "scripts": {
+    "deploy": "cd aws && cdk deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
