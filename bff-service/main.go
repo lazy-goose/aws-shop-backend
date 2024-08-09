@@ -91,10 +91,7 @@ func main() {
 		}
 		redirect("/"+service, serviceUrl, w, r)
 	})
-	PORT := os.Getenv("PORT")
-	if PORT == "" {
-		PORT = "4005"
-	}
+	PORT := "4005"
 	fmt.Printf("Starting server on port: %v\n\n", PORT)
 	if err := http.ListenAndServe(":"+PORT, CacheProducts(router)); err != nil {
 		panic(err)

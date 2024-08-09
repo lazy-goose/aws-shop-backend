@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "deploy": "cd aws && cdk deploy",
-    "start": "go run ."
+    "start": "go run .",
+    "docker:build": "docker build -t bff-api:latest .",
+    "docker:run": "docker run --rm -p 4005:4005 --env-file .env bff-api:latest"
   },
   "keywords": [],
   "author": "",
