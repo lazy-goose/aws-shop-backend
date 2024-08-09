@@ -3,11 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -48,12 +52,29 @@ func redirect(base string, redirectTo string, w http.ResponseWriter, r *http.Req
 		},
 	}
 	proxy.ServeHTTP(w, r)
-	fmt.Printf("%v -> %v\n", proxyReq.In.URL, proxyReq.Out.URL)
+	log.Printf("[REDIRECT] %v -> %v\n", proxyReq.In.URL, proxyReq.Out.URL)
 }
 
+var (
+	Cart    = "cart"
+	Product = "product"
+)
+
 var services = map[string]string{
-	"cart":    os.Getenv("CART"),
-	"product": os.Getenv("PRODUCT"),
+	Cart:    os.Getenv("CART"),
+	Product: os.Getenv("PRODUCT"),
+}
+
+func CacheProducts(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		prodList, _ := regexp.MatchString(fmt.Sprintf(`/%s/?$`, Product), r.URL.Path)
+		if prodList {
+			cacheTime := 2 * time.Minute
+			maxAge := strconv.Itoa(int(cacheTime.Seconds()))
+			w.Header().Set("Cache-Control", "public, max-age="+maxAge)
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -75,8 +96,7 @@ func main() {
 		PORT = "4005"
 	}
 	fmt.Printf("Starting server on port: %v\n\n", PORT)
-	err := http.ListenAndServe(":"+PORT, nil)
-	if err != nil {
+	if err := http.ListenAndServe(":"+PORT, CacheProducts(router)); err != nil {
 		panic(err)
 	}
 }
