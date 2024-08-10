@@ -8,14 +8,7 @@ import { fallbackCatchError, makeJsonResponse } from "./common/makeResponse";
 import { tableEnv } from "./common/env";
 import { logRequest } from "./common/logRequest";
 
-const { Ok, Err } = makeJsonResponse({
-  defaultHeaders: {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "DELETE",
-    "Access-Control-Allow-Headers": "Content-Type,Authorization",
-  },
-});
+const { Ok, Err } = makeJsonResponse();
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);

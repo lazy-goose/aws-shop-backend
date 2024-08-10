@@ -11,14 +11,7 @@ import { CreateProductDto } from "./common/schemas";
 import { errorMap } from "zod-validation-error";
 import { randomUUID } from "crypto";
 
-const { Ok, Err } = makeJsonResponse({
-  defaultHeaders: {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST",
-  },
-});
+const { Ok, Err } = makeJsonResponse();
 
 /**
  * apigatewayv2.HttpApi doesn't support schema validation
