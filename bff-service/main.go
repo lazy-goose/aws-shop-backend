@@ -61,8 +61,8 @@ var (
 )
 
 var services = map[string]string{
-	Cart:    os.Getenv("CART"),
-	Product: os.Getenv("PRODUCT"),
+	Cart:    os.Getenv("REDIRECT_CART"),
+	Product: os.Getenv("REDIRECT_PRODUCT"),
 }
 
 func CacheProducts(next http.Handler) http.HandlerFunc {
