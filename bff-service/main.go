@@ -36,6 +36,13 @@ func internalServerError(w http.ResponseWriter) {
 	writeError(w, http.StatusInternalServerError /*500*/, "Internal server error")
 }
 
+func trimLeftOnce(s string, cutset string) string {
+	if strings.HasPrefix(s, cutset) {
+		return s[len(cutset):]
+	}
+	return s
+}
+
 func redirect(base string, redirectTo string, w http.ResponseWriter, r *http.Request) {
 	targetUrl, err := url.Parse(redirectTo)
 	if err != nil {
@@ -45,7 +52,7 @@ func redirect(base string, redirectTo string, w http.ResponseWriter, r *http.Req
 	var proxyReq *httputil.ProxyRequest
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(pr *httputil.ProxyRequest) {
-			pr.Out.URL.Path = strings.TrimLeft(pr.Out.URL.Path, base)
+			pr.Out.URL.Path = trimLeftOnce(pr.Out.URL.Path, base)
 			pr.SetURL(targetUrl)
 			pr.Out.URL.Path = strings.TrimRight(pr.Out.URL.Path, "/")
 			proxyReq = pr
