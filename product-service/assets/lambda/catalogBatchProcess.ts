@@ -47,13 +47,13 @@ export const handler: SQSHandler = async (event) => {
   }
 
   const transactionCommands = processData.map(
-    ({ product_id, title, description, price, count }) => {
+    ({ product_id, title, description, price, count, imageUrl }) => {
       return new TransactWriteCommand({
         TransactItems: [
           {
             Put: {
               TableName: productsTableName,
-              Item: { id: product_id, title, description, price },
+              Item: { id: product_id, title, description, price, imageUrl },
             },
           },
           {
@@ -67,11 +67,19 @@ export const handler: SQSHandler = async (event) => {
     }
   );
 
-  await Promise.allSettled(
+  const transactionResults = await Promise.allSettled(
     transactionCommands.map((cmd) => dynamoClient.send(cmd))
   );
 
-  console.log("Stage 1. Products have been processed:", processData);
+  transactionResults.forEach((res) => {
+    if (res.status === "fulfilled") {
+      console.log("Resolved", res.value);
+    } else {
+      console.error("Rejected", res.reason);
+    }
+  });
+
+  console.log("Stage 1. Products have been processed");
 
   const Message = snsMessage(processData);
   const publishCommand = new PublishCommand({

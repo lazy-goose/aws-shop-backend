@@ -1,5 +1,6 @@
-title,description,count,price
-CSV Product A,Description of Product A,1,10.1
-CSV Product B,Description of Product B,2,20.2
-CSV Product C,Description of Product C,3,30.3
-CSV Product D,Description of Product D,4,40.4
+title,description,count,price,imageUrl
+Pop Corn,Description of pop corn,1,2.99,https://plus.unsplash.com/premium_photo-1676049461949-185dcea09d77?q=80&w=1587&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D
+CSV Product A,Description of Product A,1,10.1,
+CSV Product B,Description of Product B,2,20.2,
+CSV Product C,Description of Product C,3,30.3,
+CSV Product D,Description of Product D,4,40.4,

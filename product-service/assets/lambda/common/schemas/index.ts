@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FALLBACK_PRODUCT_IMAGE_URL } from "../../../../constants";
 
 /* Dynamodb tables */
 
@@ -7,6 +8,7 @@ export const Product = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   price: z.number(),
+  imageUrl: z.string(),
 });
 
 export const Stock = z.object({
@@ -24,6 +26,10 @@ export const CreateProductDto = z.object({
   description: z.string().optional(),
   price: z.number(),
   count: z.number().int(),
+  imageUrl: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || FALLBACK_PRODUCT_IMAGE_URL),
 });
 
 export const SQSCreateProductDto = CreateProductDto.extend({
