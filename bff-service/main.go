@@ -54,7 +54,9 @@ func redirect(base string, redirectTo string, w http.ResponseWriter, r *http.Req
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			pr.Out.URL.Path = trimLeftOnce(pr.Out.URL.Path, base)
 			pr.SetURL(targetUrl)
-			pr.Out.URL.Path = strings.TrimRight(pr.Out.URL.Path, "/")
+			if !strings.HasSuffix(pr.In.URL.Path, "/") {
+				pr.Out.URL.Path = strings.TrimRight(pr.Out.URL.Path, "/")
+			}
 			proxyReq = pr
 		},
 	}
@@ -84,20 +86,23 @@ func CacheProducts(next http.Handler) http.HandlerFunc {
 	})
 }
 
+func redirectHandler(w http.ResponseWriter, r *http.Request) {
+	service := strings.ToLower(r.PathValue("service"))
+	serviceUrl := services[service]
+	if serviceUrl == "" {
+		invalidRequestHandler(w)
+		return
+	}
+	redirect("/"+service, serviceUrl, w, r)
+}
+
 func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		invalidRequestHandler(w)
 	})
-	router.HandleFunc("/{service}/", func(w http.ResponseWriter, r *http.Request) {
-		service := strings.ToLower(r.PathValue("service"))
-		serviceUrl := services[service]
-		if serviceUrl == "" {
-			invalidRequestHandler(w)
-			return
-		}
-		redirect("/"+service, serviceUrl, w, r)
-	})
+	router.HandleFunc("/{service}/", redirectHandler)
+	router.HandleFunc("/{service}", redirectHandler)
 	PORT := "4005"
 	fmt.Printf("Starting server on port: %v\n\n", PORT)
 	if err := http.ListenAndServe(":"+PORT, CacheProducts(router)); err != nil {
