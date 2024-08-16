@@ -1,4 +1,4 @@
-title,description,count,price
+title,description,count,price,imageUrl
 CSV Product A,Description of Product A,1,10.1
 CSV Product B,Description of Product B,2.2,20.2
 CSV Product C,Description of Product C,3,30.3

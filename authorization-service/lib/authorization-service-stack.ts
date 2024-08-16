@@ -5,18 +5,14 @@ import { Construct } from "constructs";
 
 import "dotenv/config";
 
-const credentialsFromEnv = (...envNames: string[]): string => {
-  const credentials = envNames.map((env) => {
-    const username = env;
-    const password = process.env[username]?.trimEnd();
-    if (!password) {
-      throw new Error(
-        `Wrong cdk environment. Variable 'process.env[${username}'] is undefined`
-      );
-    }
-    return [username, password];
-  });
-  return credentials.map((cred) => cred.join("=")).join(":");
+const env = (name: string) => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Wrong cdk environment. Variable 'process.env[${name}'] is undefined`
+    );
+  }
+  return value;
 };
 
 export class AuthorizationServiceStack extends cdk.Stack {
@@ -30,7 +26,7 @@ export class AuthorizationServiceStack extends cdk.Stack {
         runtime: lambda.Runtime.NODEJS_LATEST,
         entry: "assets/lambda/basicAuthorizer.ts",
         environment: {
-          CREDENTIALS: credentialsFromEnv("lazy-goose"),
+          CREDENTIALS: env("CREDENTIALS"),
         },
       }
     );

@@ -5,6 +5,7 @@ export const CreateProductFromCsvDto = z.object({
   description: z.string().optional(),
   price: z.number({ coerce: true }),
   count: z.number({ coerce: true }).int(),
+  imageUrl: z.string().optional(),
 });
 
 export const SQSMessageProductDto = CreateProductFromCsvDto.extend({

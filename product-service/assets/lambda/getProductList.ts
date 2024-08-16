@@ -6,13 +6,7 @@ import { tableEnv } from "./common/env";
 import { logRequest } from "./common/logRequest";
 import { Product, Stock } from "./common/schemas";
 
-const { Ok, Err } = makeJsonResponse({
-  defaultHeaders: {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET",
-  },
-});
+const { Ok, Err } = makeJsonResponse();
 
 const unwrapItems = <T extends Record<string, unknown>[]>(outputWithItems: {
   Items?: Record<string, any>[];

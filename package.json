@@ -4,7 +4,8 @@
   "workspaces": [
     "product-service",
     "authorization-service",
-    "import-service"
+    "import-service",
+    "bff-service"
   ],
   "scripts": {
     "deploy:all": "npm run deploy --ws",

@@ -10,26 +10,28 @@ import { logRequest } from "./common/logRequest";
 import { CreateProductDto } from "./common/schemas";
 import { errorMap } from "zod-validation-error";
 import { randomUUID } from "crypto";
+import { FALLBACK_PRODUCT_IMAGE_URL } from "../../constants";
 
-const { Ok, Err } = makeJsonResponse({
-  defaultHeaders: {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST",
-  },
-});
+const { Ok, Err } = makeJsonResponse();
 
 /**
  * apigatewayv2.HttpApi doesn't support schema validation
  */
 const validateProductDto = (value: unknown) => {
-  const { success, error } = CreateProductDto.safeParse(value, { errorMap });
-  return success ? null : error.flatten();
+  const { success, data, error } = CreateProductDto.safeParse(value, {
+    errorMap,
+  });
+  return success
+    ? { ok: true as const, data, error: null }
+    : { ok: false as const, data: null, error: error.flatten() };
 };
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+
+const generateImageUrl = async (product: CreateProductDto): Promise<string> => {
+  return FALLBACK_PRODUCT_IMAGE_URL;
+};
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
@@ -45,13 +47,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     } catch {
       return errorResponse;
     }
-    const validationError = validateProductDto(requestData);
-    if (validationError) {
-      return Err(400, validationError);
+    const { ok, error, data } = validateProductDto(requestData);
+    if (!ok) {
+      return Err(400, error);
     }
 
     const id = randomUUID();
-    const { title, description, price, count } = requestData;
+    const { title, description, price, count } = data;
+
+    const imageUrl = await generateImageUrl(data);
 
     /* const transactWriteItemsOutput = */ await docClient.send(
       new TransactWriteCommand({
@@ -59,7 +63,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           {
             Put: {
               TableName: productsTableName,
-              Item: { id, title, description, price },
+              Item: { id, title, description, price, imageUrl },
             },
           },
           {

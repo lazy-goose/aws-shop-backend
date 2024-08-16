@@ -2,10 +2,10 @@ import { APIGatewayProxyResultV2 } from "aws-lambda";
 
 type Headers = Record<string, string>;
 type Overridable = {
-  defaultHeaders: Headers;
+  defaultHeaders?: Headers;
 };
 
-export const makeJsonResponse = (overridable: Overridable) => {
+export const makeJsonResponse = (overridable: Overridable = {}) => {
   const Ok = (statusCode: number, data: any, headers: Headers = {}) => {
     return {
       statusCode,

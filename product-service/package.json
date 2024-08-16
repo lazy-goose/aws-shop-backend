@@ -1,8 +1,8 @@
 {
-  "name": "aws-shop-backend",
+  "name": "product-service",
   "version": "0.1.0",
   "bin": {
-    "aws-shop-backend": "bin/aws-shop-backend.js"
+    "product-service": "bin/product-service.js"
   },
   "scripts": {
     "deploy": "cdk deploy --outputs-file product-service.output.json --all",

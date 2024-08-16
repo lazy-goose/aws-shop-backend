@@ -5,6 +5,7 @@ import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigatewayIntegrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
+import { CfnImport } from "../constants";
 
 export class ProductServiceStack extends cdk.Stack {
   public productTable: dynamodb.TableV2;
@@ -85,19 +86,32 @@ export class ProductServiceStack extends cdk.Stack {
       }
     );
 
+    const lambdaDeleteProductById = new lambdaNode.NodejsFunction(
+      this,
+      "LambdaDeleteProductById",
+      {
+        runtime: lambda.Runtime.NODEJS_LATEST,
+        entry: "assets/lambda/deleteProductById.ts",
+        environment: {
+          ...DYNAMODB_ENVIRONMENT,
+        },
+      }
+    );
+
     /* API Gateway */
 
     const apiGateway = new apigatewayv2.HttpApi(this, "ProductServiceApi", {
       createDefaultStage: true,
       corsPreflight: {
+        allowCredentials: true,
         allowHeaders: ["Content-Type", "Authorization"],
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,
-          apigatewayv2.CorsHttpMethod.HEAD,
           apigatewayv2.CorsHttpMethod.POST,
+          apigatewayv2.CorsHttpMethod.DELETE,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
-        allowOrigins: ["*"],
+        allowOrigins: [cdk.Fn.importValue(CfnImport.FRONTEND_ORIGIN)],
         maxAge: cdk.Duration.days(1),
       },
     });
@@ -133,12 +147,23 @@ export class ProductServiceStack extends cdk.Stack {
       ),
     });
 
+    apiGateway.addRoutes({
+      path: "/products/{productId}",
+      methods: [apigatewayv2.HttpMethod.DELETE],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration(
+        lambdaDeleteProductById.node.id + "Integration",
+        lambdaDeleteProductById
+      ),
+    });
+
     this.productTable.grantReadWriteData(lambdaGetProductList);
     this.productTable.grantReadWriteData(lambdaCreateProduct);
     this.productTable.grantReadWriteData(lambdaGetProductById);
+    this.productTable.grantReadWriteData(lambdaDeleteProductById);
 
     this.stockTable.grantReadWriteData(lambdaGetProductList);
     this.stockTable.grantReadWriteData(lambdaCreateProduct);
     this.stockTable.grantReadWriteData(lambdaGetProductById);
+    this.stockTable.grantReadWriteData(lambdaDeleteProductById);
   }
 }
